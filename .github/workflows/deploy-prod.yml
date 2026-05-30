@@ -1,0 +1,198 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+
+env:
+  ECR_REGISTRY_UK: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
+  ECR_REGISTRY_NA: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECS_CLUSTER_UK: vb-production-uk
+  ECS_CLUSTER_NA: vb-production-na
+
+jobs:
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from release
+        id: meta
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials (UK)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Login to ECR (UK)
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push API to UK ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/api:${{ steps.meta.outputs.version }}
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push Web to UK ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/web:${{ steps.meta.outputs.version }}
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/web:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.vb.uk
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push ML to UK ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/ml/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/ml:${{ steps.meta.outputs.version }}
+            ${{ env.ECR_REGISTRY_UK }}/vb/production/ml:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Cross-replicate to NA ECR
+      - name: Configure AWS credentials (NA)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to ECR (NA)
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push images to NA ECR
+        run: |
+          for service in api web ml; do
+            docker pull ${{ env.ECR_REGISTRY_UK }}/vb/production/$service:${{ steps.meta.outputs.version }}
+            docker tag \
+              ${{ env.ECR_REGISTRY_UK }}/vb/production/$service:${{ steps.meta.outputs.version }} \
+              ${{ env.ECR_REGISTRY_NA }}/vb/production/$service:${{ steps.meta.outputs.version }}
+            docker tag \
+              ${{ env.ECR_REGISTRY_UK }}/vb/production/$service:${{ steps.meta.outputs.version }} \
+              ${{ env.ECR_REGISTRY_NA }}/vb/production/$service:latest
+            docker push ${{ env.ECR_REGISTRY_NA }}/vb/production/$service:${{ steps.meta.outputs.version }}
+            docker push ${{ env.ECR_REGISTRY_NA }}/vb/production/$service:latest
+          done
+
+  deploy-uk:
+    name: Deploy UK (eu-west-2)
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Deploy all UK services
+        run: |
+          for svc in api web ml; do
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER_UK }} \
+              --service vb-production-uk-$svc \
+              --force-new-deployment \
+              --region eu-west-2
+          done
+
+      - name: Wait for UK services to stabilise
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER_UK }} \
+            --services vb-production-uk-api vb-production-uk-web vb-production-uk-ml \
+            --region eu-west-2
+
+      - name: Run DB migrations (UK)
+        run: |
+          aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER_UK }} \
+            --task-definition vb-production-uk-api \
+            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_UK_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_UK_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --region eu-west-2
+
+  deploy-na:
+    name: Deploy NA (us-east-1)
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-uk]
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy all NA services
+        run: |
+          for svc in api web ml; do
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER_NA }} \
+              --service vb-production-na-$svc \
+              --force-new-deployment \
+              --region us-east-1
+          done
+
+      - name: Wait for NA services to stabilise
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER_NA }} \
+            --services vb-production-na-api vb-production-na-web vb-production-na-ml \
+            --region us-east-1
+
+      - name: Run DB migrations (NA)
+        run: |
+          aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER_NA }} \
+            --task-definition vb-production-na-api \
+            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_NA_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_NA_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --region us-east-1
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --region us-east-1
