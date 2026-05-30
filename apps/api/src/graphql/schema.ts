@@ -1,0 +1,224 @@
+export const typeDefs = /* GraphQL */ `
+  scalar DateTime
+  scalar JSON
+
+  # ─── Enums ───────────────────────────────────────────────────────────────────
+
+  enum UserRole {
+    freelancer
+    founder
+    investor
+    supplier
+    stakeholder
+  }
+
+  enum Region {
+    UK
+    IN
+    NA
+  }
+
+  enum ConnectionStatus {
+    pending
+    accepted
+    declined
+  }
+
+  enum ConnectionKind {
+    collaboration
+    investment
+    supply
+    mentorship
+  }
+
+  enum ProjectStatus {
+    draft
+    open
+    in_progress
+    completed
+  }
+
+  enum InvestmentStage {
+    seed
+    pre_series_a
+    series_a
+    growth
+  }
+
+  # ─── Core types ──────────────────────────────────────────────────────────────
+
+  type User {
+    id: ID!
+    email: String!
+    role: UserRole!
+    region: Region!
+    profileData: JSON!
+    photoUrl: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    profile: Profile
+    ownedProjects: [Project!]!
+    sentConnections: [Connection!]!
+    receivedConnections: [Connection!]!
+  }
+
+  type Profile {
+    id: ID!
+    userId: ID!
+    displayName: String!
+    bio: String
+    skills: [String!]!
+    tags: [String!]!
+    verified: Boolean!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    user: User!
+  }
+
+  type Project {
+    id: ID!
+    ownerId: ID!
+    title: String!
+    description: String
+    status: ProjectStatus!
+    requiredSkills: [String!]!
+    budget: JSON
+    region: Region!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    owner: User!
+  }
+
+  type Connection {
+    id: ID!
+    requesterId: ID!
+    receiverId: ID!
+    status: ConnectionStatus!
+    kind: ConnectionKind!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    requester: User!
+    receiver: User!
+  }
+
+  type Message {
+    id: ID!
+    senderId: ID!
+    receiverId: ID!
+    content: String!
+    read: Boolean!
+    sentAt: String!
+  }
+
+  # ─── Auth & utility types ────────────────────────────────────────────────────
+
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+
+  type PresignedUrl {
+    url: String!
+    key: String!
+  }
+
+  # ─── Subscription event types ────────────────────────────────────────────────
+
+  type MatchEvent {
+    userId: ID!
+    matchedUserId: ID!
+    score: Float!
+  }
+
+  type ConnectionUpdateEvent {
+    connectionId: ID!
+    status: ConnectionStatus!
+    requesterId: ID!
+    receiverId: ID!
+  }
+
+  # ─── Inputs ──────────────────────────────────────────────────────────────────
+
+  input RegisterInput {
+    email: String!
+    password: String!
+    role: UserRole!
+    region: Region!
+    displayName: String!
+  }
+
+  input LoginInput {
+    email: String!
+    password: String!
+  }
+
+  input UpdateProfileInput {
+    displayName: String
+    bio: String
+    skills: [String!]
+    tags: [String!]
+    profileData: JSON
+    photoKey: String
+  }
+
+  input CreateProjectInput {
+    title: String!
+    description: String
+    requiredSkills: [String!]!
+    budget: JSON
+    region: Region!
+  }
+
+  input UpdateProjectInput {
+    title: String
+    description: String
+    status: ProjectStatus
+    requiredSkills: [String!]
+    budget: JSON
+  }
+
+  input SendConnectionInput {
+    receiverId: ID!
+    kind: ConnectionKind!
+  }
+
+  input ProjectFilterInput {
+    status: ProjectStatus
+    region: Region
+    skills: [String!]
+  }
+
+  # ─── Operations ──────────────────────────────────────────────────────────────
+
+  type Query {
+    me: User
+    user(id: ID!): User
+    users(role: UserRole, region: Region, limit: Int, offset: Int): [User!]!
+    profile(userId: ID!): Profile
+    project(id: ID!): Project
+    projects(filter: ProjectFilterInput, limit: Int, offset: Int): [Project!]!
+    myProjects: [Project!]!
+    connections(status: ConnectionStatus): [Connection!]!
+    messages(withUserId: ID!, limit: Int, before: String): [Message!]!
+    unreadCount: Int!
+  }
+
+  type Mutation {
+    register(input: RegisterInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    updateProfile(input: UpdateProfileInput!): Profile!
+    requestProfilePhotoUpload(fileName: String!): PresignedUrl!
+    createProject(input: CreateProjectInput!): Project!
+    updateProject(id: ID!, input: UpdateProjectInput!): Project!
+    deleteProject(id: ID!): Boolean!
+    sendConnection(input: SendConnectionInput!): Connection!
+    respondToConnection(id: ID!, accept: Boolean!): Connection!
+    sendMessage(toUserId: ID!, content: String!): Message!
+    markMessagesRead(fromUserId: ID!): Int!
+  }
+
+  type Subscription {
+    newMatch: MatchEvent!
+    connectionUpdate: ConnectionUpdateEvent!
+  }
+`;
