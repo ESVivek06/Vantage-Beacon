@@ -1,0 +1,233 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  output          = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector", schema: "public")]
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  freelancer
+  founder
+  investor
+  supplier
+  stakeholder
+}
+
+enum Region {
+  UK
+  IN
+  NA
+}
+
+enum ConnectionStatus {
+  pending
+  accepted
+  declined
+}
+
+enum ConnectionKind {
+  collaboration
+  investment
+  supply
+  mentorship
+}
+
+enum ProjectStatus {
+  draft
+  open
+  in_progress
+  completed
+}
+
+enum InvestmentStage {
+  seed
+  pre_series_a
+  series_a
+  growth
+}
+
+enum InvestmentStatus {
+  interested
+  term_sheet
+  closed
+  declined
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+/// Platform user — one row per identity regardless of role.
+/// Role-specific fields live in profileData (JSONB) to avoid sparse columns.
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String?
+  role         UserRole
+  region       Region
+  /// Role-specific payload: e.g. { skills, rate } for freelancer; { companyName, stage } for founder
+  profileData  Json      @default("{}") @db.JsonB
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+
+  profile             Profile?
+  ownedProjects       Project[]    @relation("OwnedProjects")
+  sentConnections     Connection[] @relation("SentConnections")
+  receivedConnections Connection[] @relation("ReceivedConnections")
+  madeInvestments     Investment[] @relation("InvestorInvestments")
+  receivedInvestments Investment[] @relation("FounderInvestments")
+  sentMessages        Message[]    @relation("SentMessages")
+  receivedMessages    Message[]    @relation("ReceivedMessages")
+
+  @@index([email])
+  @@index([role])
+  @@index([region])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+/// 1:1 extension of User — stores display data and the embedding vector.
+/// Kept separate so the large VECTOR column is only loaded when needed.
+model Profile {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @unique @db.Uuid
+  displayName String
+  bio         String?
+  skills      String[]
+  tags        String[]
+  /// 1536-dim OpenAI text-embedding-3-small vector; IVFFlat cosine index added via raw SQL in migration
+  embeddingVector Unsupported("vector(1536)")?
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([verified])
+  @@index([deletedAt])
+  @@map("profiles")
+}
+
+/// Founder-owned project open for collaboration, investment, or supply connections.
+model Project {
+  id             String        @id @default(uuid()) @db.Uuid
+  ownerId        String        @db.Uuid
+  title          String
+  description    String?
+  status         ProjectStatus @default(draft)
+  requiredSkills String[]
+  /// { min: number, max: number, currency: string }
+  budget         Json?         @db.JsonB
+  region         Region
+  /// 1536-dim embedding for project description; IVFFlat cosine index added via raw SQL in migration
+  embeddingVector Unsupported("vector(1536)")?
+  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(6)
+  deletedAt      DateTime?     @db.Timestamptz(6)
+
+  owner       User         @relation("OwnedProjects", fields: [ownerId], references: [id])
+  investments Investment[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([region])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+/// Directed connection request between two users (self-join M:N).
+model Connection {
+  id          String           @id @default(uuid()) @db.Uuid
+  requesterId String           @db.Uuid
+  receiverId  String           @db.Uuid
+  status      ConnectionStatus @default(pending)
+  kind        ConnectionKind
+  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime         @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime?        @db.Timestamptz(6)
+
+  requester User @relation("SentConnections", fields: [requesterId], references: [id])
+  receiver  User @relation("ReceivedConnections", fields: [receiverId], references: [id])
+
+  /// Prevent duplicate connection requests in the same direction
+  @@unique([requesterId, receiverId])
+  @@index([requesterId])
+  @@index([receiverId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("connections")
+}
+
+/// AI-generated match score between any two entities (User↔User or User↔Project).
+/// sourceId/targetId are polymorphic — check explainability.kind to resolve type.
+model Match {
+  id             String    @id @default(uuid()) @db.Uuid
+  sourceId       String    @db.Uuid
+  targetId       String    @db.Uuid
+  score          Float
+  /// { kind: "user_user"|"user_project", topReasons: string[], signals: object }
+  explainability Json      @db.JsonB
+  matchedAt      DateTime  @default(now()) @db.Timestamptz(6)
+  deletedAt      DateTime? @db.Timestamptz(6)
+
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([score])
+  @@index([matchedAt])
+  @@index([deletedAt])
+  @@map("matches")
+}
+
+/// Investment interest/deal between an investor, a founder, and their project.
+model Investment {
+  id         String           @id @default(uuid()) @db.Uuid
+  investorId String           @db.Uuid
+  founderId  String           @db.Uuid
+  projectId  String           @db.Uuid
+  stage      InvestmentStage
+  amount     Decimal?         @db.Decimal(20, 2)
+  currency   String           @default("GBP")
+  status     InvestmentStatus
+  createdAt  DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime         @updatedAt @db.Timestamptz(6)
+  deletedAt  DateTime?        @db.Timestamptz(6)
+
+  investor User    @relation("InvestorInvestments", fields: [investorId], references: [id])
+  founder  User    @relation("FounderInvestments", fields: [founderId], references: [id])
+  project  Project @relation(fields: [projectId], references: [id])
+
+  @@index([investorId])
+  @@index([founderId])
+  @@index([projectId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("investments")
+}
+
+/// 1:1 text message between two users.
+model Message {
+  id         String    @id @default(uuid()) @db.Uuid
+  senderId   String    @db.Uuid
+  receiverId String    @db.Uuid
+  content    String
+  read       Boolean   @default(false)
+  sentAt     DateTime  @default(now()) @db.Timestamptz(6)
+  deletedAt  DateTime? @db.Timestamptz(6)
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId, read])
+  @@index([sentAt])
+  @@index([deletedAt])
+  @@map("messages")
+}
