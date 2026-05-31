@@ -60,23 +60,57 @@ enum InvestmentStatus {
   declined
 }
 
+enum AuditAction {
+  profile_update
+  data_export_requested
+  data_export_completed
+  erasure_requested
+  erasure_completed
+  dpa_accepted
+  cookie_consent_given
+}
+
+enum GdprRequestType {
+  erasure
+  export
+}
+
+enum GdprRequestStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum ConsentType {
+  dpa
+  cookie_analytics
+  cookie_marketing
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 /// Platform user — one row per identity regardless of role.
 /// Role-specific fields live in profileData (JSONB) to avoid sparse columns.
 model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique
-  passwordHash String?
-  role         UserRole
-  region       Region
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  passwordHash  String?
+  role          UserRole  @default(stakeholder)
+  region        Region    @default(UK)
   /// Role-specific payload: e.g. { skills, rate } for freelancer; { companyName, stage } for founder
-  profileData  Json      @default("{}") @db.JsonB
-  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
-  deletedAt    DateTime? @db.Timestamptz(6)
+  profileData   Json      @default("{}") @db.JsonB
+  /// NextAuth fields — populated from OAuth provider or left null for credentials users
+  name          String?
+  emailVerified DateTime? @db.Timestamptz(6)
+  image         String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt     DateTime? @db.Timestamptz(6)
 
   profile             Profile?
+  accounts            Account[]
+  apiKeys             ApiKey[]
   ownedProjects       Project[]    @relation("OwnedProjects")
   sentConnections     Connection[] @relation("SentConnections")
   receivedConnections Connection[] @relation("ReceivedConnections")
@@ -90,6 +124,57 @@ model User {
   @@index([region])
   @@index([deletedAt])
   @@map("users")
+}
+
+/// OAuth account linking — one user may have multiple OAuth provider accounts.
+model Account {
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Email verification tokens — used by NextAuth for email-based flows.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(6)
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+/// API keys for supplier integrations — keyHash is SHA-256 of the raw key, never plaintext.
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  keyHash    String    @unique
+  prefix     String
+  name       String
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt  DateTime? @db.Timestamptz(6)
+  lastUsedAt DateTime? @db.Timestamptz(6)
+  revokedAt  DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+  @@map("api_keys")
 }
 
 /// 1:1 extension of User — stores display data and the embedding vector.
@@ -210,6 +295,61 @@ model Investment {
   @@index([status])
   @@index([deletedAt])
   @@map("investments")
+}
+
+/// Append-only audit log for sensitive mutations (profile update, erasure, export).
+/// Never delete rows from this table — it is the compliance record.
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String      @db.Uuid
+  action     AuditAction
+  entityId   String?     @db.Uuid
+  entityType String?
+  ipAddress  String?
+  metadata   Json        @default("{}") @db.JsonB
+  createdAt  DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Tracks GDPR Art. 17 (erasure) and Art. 20 (export) requests.
+model GdprRequest {
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @db.Uuid
+  type        GdprRequestType
+  status      GdprRequestStatus @default(pending)
+  scheduledAt DateTime?         @db.Timestamptz(6)
+  completedAt DateTime?         @db.Timestamptz(6)
+  exportUrl   String?
+  metadata    Json              @default("{}") @db.JsonB
+  createdAt   DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("gdpr_requests")
+}
+
+/// Records DPA and cookie consent per user — immutable once written.
+model UserConsent {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String      @db.Uuid
+  type       ConsentType
+  version    String
+  accepted   Boolean
+  ipAddress  String?
+  userAgent  String?
+  acceptedAt DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@unique([userId, type, version])
+  @@index([userId])
+  @@index([type])
+  @@map("user_consents")
 }
 
 /// 1:1 text message between two users.
