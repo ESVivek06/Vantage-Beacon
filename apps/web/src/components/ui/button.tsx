@@ -6,27 +6,43 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 select-none',
   {
     variants: {
       variant: {
-        default: 'bg-accent text-accent-foreground hover:bg-accent/90',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-border bg-background hover:bg-muted hover:text-foreground',
-        secondary: 'bg-muted text-muted-foreground hover:bg-muted/80',
-        ghost: 'hover:bg-muted hover:text-foreground',
-        link: 'text-accent underline-offset-4 hover:underline',
+        primary:
+          'bg-primary-600 text-white hover:bg-primary-500 active:bg-primary-700 active:scale-[0.98] shadow-xs focus-visible:shadow-focus-ring',
+        secondary:
+          'bg-white text-primary-600 border border-primary-600 hover:bg-primary-50 active:bg-primary-100 active:scale-[0.98] focus-visible:shadow-focus-ring',
+        ghost:
+          'text-neutral-700 border border-neutral-200 hover:bg-neutral-100 active:bg-neutral-200 active:scale-[0.98] focus-visible:shadow-focus-ring',
+        danger:
+          'bg-error-600 text-white hover:bg-error-500 active:bg-error-700 active:scale-[0.98] shadow-xs focus-visible:shadow-focus-ring',
+        success:
+          'bg-success-600 text-white hover:bg-success-500 active:bg-success-700 active:scale-[0.98] shadow-xs focus-visible:shadow-focus-ring',
+        link: 'text-primary-600 underline-offset-4 hover:underline p-0 h-auto',
+        // Backward-compat aliases
+        default:
+          'bg-primary-600 text-white hover:bg-primary-500 active:bg-primary-700 active:scale-[0.98] shadow-xs focus-visible:shadow-focus-ring',
+        destructive: 'bg-error-600 text-white hover:bg-error-500 active:scale-[0.98] shadow-xs',
+        outline:
+          'text-neutral-700 border border-neutral-200 bg-white hover:bg-neutral-100 active:scale-[0.98]',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-12 rounded-md px-8 text-base',
-        icon: 'h-10 w-10',
+        xs: 'h-7 px-2.5 text-xs rounded-sm gap-1',
+        sm: 'h-9 px-3.5 text-sm rounded-md gap-1.5',
+        md: 'h-10 px-4 text-sm rounded-md gap-2',
+        lg: 'h-11 px-5 text-md rounded-md gap-2',
+        xl: 'h-13 px-6 text-lg font-semibold rounded-lg gap-2',
+        icon: 'h-10 w-10 rounded-md',
+        'icon-sm': 'h-9 w-9 rounded-md',
+        // Backward-compat
+        default: 'h-10 px-4 text-sm rounded-md gap-2',
       },
     },
     defaultVariants: {
-      variant: 'default',
-      size: 'default',
+      variant: 'primary',
+      size: 'md',
     },
   },
 );

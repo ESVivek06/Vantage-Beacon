@@ -7,10 +7,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!session) redirect('/auth/sign-in');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-neutral-50">
       <Navigation user={session.user} />
-      <main className="md:pl-56 pt-14 md:pt-0 pb-16 md:pb-0">
-        <div className="container py-6">{children}</div>
+      {/* Desktop: padding-top 64px for top nav; Mobile: 56px top + 56px bottom */}
+      <main className="pt-14 md:pt-16 pb-14 md:pb-0 min-h-screen">
+        {children}
       </main>
     </div>
   );

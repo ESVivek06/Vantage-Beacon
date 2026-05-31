@@ -5,11 +5,15 @@ import bcrypt from 'bcryptjs';
 import { getClient } from '@vb/database';
 import { authConfig } from './auth.config';
 
-const db = getClient();
+let _db: ReturnType<typeof getClient> | undefined;
+function db() {
+  if (!_db) _db = getClient();
+  return _db;
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db()),
   providers: [
     ...authConfig.providers,
     Credentials({
@@ -20,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await db.user.findUnique({
+        const user = await db().user.findUnique({
           where: { email: credentials.email as string },
           select: {
             id: true,
@@ -59,8 +63,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const t = await Promise.resolve(base);
 
       // For OAuth users, role/region come from the DB record (not provider)
-      if (account && account.type !== 'credentials' && t.sub) {
-        const dbUser = await db.user.findUnique({
+      if (account && account.type !== 'credentials' && t && t.sub) {
+        const dbUser = await db().user.findUnique({
           where: { id: t.sub },
           select: { role: true, region: true },
         });
@@ -77,7 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // OAuth users are created with DB defaults (stakeholder/UK).
       // If the provider supplied a name, ensure it's persisted.
       if (user.id && user.name) {
-        await db.user.update({
+        await db().user.update({
           where: { id: user.id },
           data: { name: user.name },
         });

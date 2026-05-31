@@ -37,13 +37,13 @@ export function roleLabel(role: string) {
 
 export function roleColor(role: string) {
   const map: Record<string, string> = {
-    freelancer: 'bg-blue-100 text-blue-700',
-    founder: 'bg-purple-100 text-purple-700',
-    investor: 'bg-green-100 text-green-700',
-    supplier: 'bg-orange-100 text-orange-700',
-    stakeholder: 'bg-gray-100 text-gray-700',
+    freelancer: 'bg-violet-100 text-violet-700',
+    founder: 'bg-teal-100 text-teal-700',
+    investor: 'bg-amber-100 text-amber-700',
+    supplier: 'bg-pink-100 text-pink-700',
+    stakeholder: 'bg-neutral-100 text-neutral-700',
   };
-  return map[role] ?? 'bg-gray-100 text-gray-700';
+  return map[role] ?? 'bg-neutral-100 text-neutral-700';
 }
 
 export function statusColor(status: string) {

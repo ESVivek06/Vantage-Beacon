@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getClient } from '@vb/database';
 import {
@@ -6,8 +7,8 @@ import {
   SESSION_COOKIE,
   REFRESH_COOKIE,
   SESSION_MAX_AGE,
-  REFRESH_TOKEN_TTL,
 } from '@/lib/jwt';
+import { REFRESH_TOKEN_TTL } from '@/lib/redis';
 
 const SECURE = process.env.NODE_ENV === 'production';
 

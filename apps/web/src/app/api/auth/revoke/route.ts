@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { type NextRequest, NextResponse } from 'next/server';
 import { revokeRefreshToken, REFRESH_COOKIE, SESSION_COOKIE } from '@/lib/jwt';
 
