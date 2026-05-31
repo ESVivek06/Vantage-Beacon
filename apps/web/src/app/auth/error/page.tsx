@@ -1,6 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const MESSAGES: Record<string, string> = {
   Configuration: 'There is a problem with the server configuration.',
@@ -15,10 +19,28 @@ export default function AuthErrorPage() {
   const message = MESSAGES[error] ?? MESSAGES.Default;
 
   return (
-    <main style={{ maxWidth: 400, margin: '80px auto', padding: '0 16px' }}>
-      <h1>Authentication error</h1>
-      <p>{message}</p>
-      <a href="/auth/sign-in">Back to sign in</a>
+    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30">
+      <div className="w-full max-w-md">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+              </div>
+              <CardTitle>Authentication error</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">{message}</p>
+            <Button variant="outline" asChild className="gap-2">
+              <Link href="/auth/sign-in">
+                <ArrowLeft className="h-4 w-4" />
+                Back to sign in
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }

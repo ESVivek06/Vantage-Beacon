@@ -3,9 +3,25 @@
 import { signIn } from 'next-auth/react';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const ROLES = ['freelancer', 'founder', 'investor', 'supplier', 'stakeholder'] as const;
-const REGIONS = ['UK', 'NA', 'IN'] as const;
+const ROLES = [
+  { value: 'freelancer', label: 'Freelancer' },
+  { value: 'founder', label: 'Founder' },
+  { value: 'investor', label: 'Investor' },
+  { value: 'supplier', label: 'Supplier' },
+  { value: 'stakeholder', label: 'Stakeholder' },
+];
+const REGIONS = [
+  { value: 'UK', label: 'UK' },
+  { value: 'NA', label: 'North America' },
+  { value: 'IN', label: 'India' },
+];
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -35,66 +51,129 @@ export default function SignUpPage() {
       return;
     }
 
-    // Auto-sign-in after successful registration
-    await signIn('credentials', { email: form.email, password: form.password, callbackUrl: '/dashboard' });
+    await signIn('credentials', { email: form.email, password: form.password, callbackUrl: '/feed' });
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: '80px auto', padding: '0 16px' }}>
-      <h1>Create your V.B account</h1>
-
-      <button onClick={() => signIn('google', { callbackUrl: '/dashboard' })} style={{ width: '100%', marginBottom: 8 }}>
-        Continue with Google
-      </button>
-      <button onClick={() => signIn('linkedin', { callbackUrl: '/dashboard' })} style={{ width: '100%', marginBottom: 24 }}>
-        Continue with LinkedIn
-      </button>
-
-      <hr />
-
-      <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
-        {[
-          { id: 'name', label: 'Name', type: 'text', required: false },
-          { id: 'email', label: 'Email', type: 'email', required: true },
-          { id: 'password', label: 'Password (min 8 chars)', type: 'password', required: true },
-        ].map(({ id, label, type, required }) => (
-          <div key={id} style={{ marginBottom: 12 }}>
-            <label htmlFor={id}>{label}</label>
-            <input
-              id={id}
-              type={type}
-              value={form[id as keyof typeof form]}
-              onChange={(e) => set(id, e.target.value)}
-              required={required}
-              style={{ display: 'block', width: '100%', marginTop: 4 }}
-            />
-          </div>
-        ))}
-
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="role">Role</label>
-          <select id="role" value={form.role} onChange={(e) => set('role', e.target.value)} style={{ display: 'block', width: '100%', marginTop: 4 }}>
-            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
+    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30 py-8">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="text-3xl font-bold text-accent">V.B</Link>
+          <p className="text-muted-foreground mt-2 text-sm">Create your account</p>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label htmlFor="region">Region</label>
-          <select id="region" value={form.region} onChange={(e) => set('region', e.target.value)} style={{ display: 'block', width: '100%', marginTop: 4 }}>
-            {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Get started</CardTitle>
+            <CardDescription>Join the V.B platform</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" onClick={() => signIn('google', { callbackUrl: '/feed' })} className="gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Google
+              </Button>
+              <Button variant="outline" onClick={() => signIn('linkedin', { callbackUrl: '/feed' })} className="gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#0A66C2">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                LinkedIn
+              </Button>
+            </div>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or sign up with email</span>
+              </div>
+            </div>
 
-        <button type="submit" disabled={loading} style={{ width: '100%' }}>
-          {loading ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={(e) => set('name', e.target.value)}
+                  placeholder="Jane Smith"
+                  autoComplete="name"
+                />
+              </div>
 
-      <p style={{ marginTop: 16 }}>
-        Already have an account? <a href="/auth/sign-in">Sign in</a>
-      </p>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set('email', e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password * <span className="text-muted-foreground font-normal">(min 8 characters)</span></Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => set('password', e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Role *</Label>
+                  <Select value={form.role} onValueChange={(v) => set('role', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Region *</Label>
+                  <Select value={form.region} onValueChange={(v) => set('region', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REGIONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {error && <p className="text-sm text-destructive">{error}</p>}
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Creating account…' : 'Create account'}
+              </Button>
+            </form>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/auth/sign-in" className="text-accent hover:underline font-medium">
+                Sign in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }

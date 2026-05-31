@@ -8,7 +8,7 @@ const { auth } = NextAuth(authConfig);
 
 const API_AUTH_PREFIX = '/api/auth';
 // Routes that are always public
-const PUBLIC_PATHS = new Set(['/', '/about', '/auth/sign-in', '/auth/sign-up', '/auth/error']);
+const PUBLIC_PATHS = new Set(['/', '/about', '/auth/sign-in', '/auth/sign-up', '/auth/error', '/offline']);
 // Static asset patterns handled before the matcher, but guard here too
 const STATIC_PREFIXES = ['/_next/', '/favicon.ico'];
 
@@ -26,7 +26,7 @@ export default auth(async function middleware(req: NextRequest & { auth: unknown
   const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/auth/');
 
   if (isPublic) {
-    if (isLoggedIn) return NextResponse.redirect(new URL('/dashboard', nextUrl));
+    if (isLoggedIn) return NextResponse.redirect(new URL('/feed', nextUrl));
     return NextResponse.next();
   }
 

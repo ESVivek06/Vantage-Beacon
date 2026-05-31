@@ -28,7 +28,7 @@ export const authConfig: NextAuthConfig = {
       if (isPublic) return true;
       if (isAuthRoute) {
         // Redirect already-authed users away from auth pages
-        if (isLoggedIn) return Response.redirect(new URL('/dashboard', nextUrl));
+        if (isLoggedIn) return Response.redirect(new URL('/feed', nextUrl));
         return true;
       }
 
