@@ -122,6 +122,40 @@ export const typeDefs = /* GraphQL */ `
     key: String!
   }
 
+  # ─── Matching types ──────────────────────────────────────────────────────────
+
+  type MatchExplanation {
+    semanticScore: Float!
+    skillOverlap: [String!]!
+    regionMatch: Boolean!
+    topReasons: [String!]!
+  }
+
+  type Match {
+    id: ID!
+    sourceId: ID!
+    targetId: ID!
+    targetType: String!
+    score: Float!
+    explanation: MatchExplanation!
+    matchedAt: DateTime!
+  }
+
+  type MatchMetrics {
+    accepted: Int!
+    total: Int!
+    rate: Float!
+    ratePercent: String!
+    meetingTarget: Boolean!
+  }
+
+  input MatchFilterInput {
+    region: Region
+    requiredSkills: [String!]
+    targetType: String
+    targetRole: String
+  }
+
   # ─── Subscription event types ────────────────────────────────────────────────
 
   type MatchEvent {
@@ -201,6 +235,8 @@ export const typeDefs = /* GraphQL */ `
     connections(status: ConnectionStatus): [Connection!]!
     messages(withUserId: ID!, limit: Int, before: String): [Message!]!
     unreadCount: Int!
+    matches(matchType: String!, filters: MatchFilterInput, limit: Int): [Match!]!
+    matchMetrics(since: DateTime): MatchMetrics!
   }
 
   type Mutation {
@@ -215,6 +251,7 @@ export const typeDefs = /* GraphQL */ `
     respondToConnection(id: ID!, accept: Boolean!): Connection!
     sendMessage(toUserId: ID!, content: String!): Message!
     markMessagesRead(fromUserId: ID!): Int!
+    submitMatchFeedback(matchId: ID!, action: String!, reason: String): Boolean!
   }
 
   type Subscription {

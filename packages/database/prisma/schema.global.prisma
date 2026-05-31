@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/global-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_GLOBAL")
+}
+
+/// Global metadata — stores ONLY userId → region; absolutely no PII stored here.
+/// Queried on every request to resolve which regional cluster to route to.
+model UserRegionMapping {
+  userId    String   @id @db.Uuid
+  region    String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@map("user_region_mappings")
+}

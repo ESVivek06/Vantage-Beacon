@@ -371,3 +371,26 @@ model Message {
   @@index([deletedAt])
   @@map("messages")
 }
+
+enum MatchFeedbackAction {
+  accepted
+  rejected
+}
+
+/// Accept/reject signal recorded when a user acts on a match recommendation.
+/// One row per (matchId, userId) — unique constraint allows decision revision.
+model MatchFeedback {
+  id        String               @id @default(uuid()) @db.Uuid
+  matchId   String               @db.Uuid
+  userId    String               @db.Uuid
+  action    MatchFeedbackAction
+  reason    String?
+  createdAt DateTime             @default(now()) @db.Timestamptz(6)
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("match_feedback")
+}

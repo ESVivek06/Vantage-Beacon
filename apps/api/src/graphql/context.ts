@@ -18,7 +18,7 @@ function fromToken(token: string): GraphQLContext {
   }
 }
 
-export function buildContext({ req }: { req: Request }): GraphQLContext {
+export async function buildContext({ req }: { req: Request }): Promise<GraphQLContext> {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) return { user: null, db: null };
   return fromToken(auth.slice(7));

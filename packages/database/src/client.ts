@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Region } from '@prisma/client';
+import { Region } from './enums';
 
 /**
  * Regional DATABASE_URL environment variables.
