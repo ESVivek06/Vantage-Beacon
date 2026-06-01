@@ -4,6 +4,14 @@ import { MatchingService } from '../../matching/matchingService';
 import { MlServiceEmbeddingProvider } from '../../matching/embeddingService';
 import type { MatchType, MatchFilter } from '../../matching/types';
 
+type UserRole = 'freelancer' | 'founder' | 'investor' | 'supplier' | 'stakeholder';
+
+function roleToMatchType(role: UserRole): MatchType {
+  if (role === 'freelancer') return 'freelancer_to_project';
+  if (role === 'founder' || role === 'investor') return 'founder_to_investor';
+  return 'user_to_user';
+}
+
 function getMatchingService(ctx: GraphQLContext): MatchingService {
   return new MatchingService(ctx.db!, new MlServiceEmbeddingProvider());
 }
@@ -39,6 +47,37 @@ export const matchResolvers = {
         score: r.score,
         explanation: r.explanation,
         matchedAt: new Date(),
+      }));
+    },
+
+    matchCandidates: async (
+      _: unknown,
+      { userId, role, limit }: { userId: string; role: UserRole; limit?: number },
+      ctx: GraphQLContext,
+    ) => {
+      const caller = requireAuth(ctx);
+      // Users may query their own candidates; callers with different IDs need same-user constraint.
+      if (caller.sub !== userId) {
+        throw new Error('Forbidden: you can only fetch candidates for your own profile');
+      }
+      const svc = getMatchingService(ctx);
+      const matchType = roleToMatchType(role);
+      const results = await svc.findMatches({
+        userId,
+        matchType,
+        limit: Math.min(limit ?? 20, 100),
+      });
+      return results.map((r) => ({
+        id: r.matchId,
+        sourceId: userId,
+        targetId: r.targetId,
+        targetType: r.targetType,
+        score: r.score,
+        explanation: r.explanation,
+        matchedAt: new Date(),
+        displayName: r.metadata?.displayName ?? null,
+        region: r.metadata?.region ?? null,
+        role: r.metadata?.role ?? null,
       }));
     },
 

@@ -141,6 +141,20 @@ export const typeDefs = /* GraphQL */ `
     matchedAt: DateTime!
   }
 
+  # Enriched match result returned by matchCandidates — includes resolved profile metadata.
+  type MatchResult {
+    id: ID!
+    sourceId: ID!
+    targetId: ID!
+    targetType: String!
+    score: Float!
+    explanation: MatchExplanation!
+    matchedAt: DateTime!
+    displayName: String
+    region: String
+    role: String
+  }
+
   type MatchMetrics {
     accepted: Int!
     total: Int!
@@ -236,6 +250,7 @@ export const typeDefs = /* GraphQL */ `
     messages(withUserId: ID!, limit: Int, before: String): [Message!]!
     unreadCount: Int!
     matches(matchType: String!, filters: MatchFilterInput, limit: Int): [Match!]!
+    matchCandidates(userId: ID!, role: UserRole!, limit: Int): [MatchResult!]!
     matchMetrics(since: DateTime): MatchMetrics!
   }
 
