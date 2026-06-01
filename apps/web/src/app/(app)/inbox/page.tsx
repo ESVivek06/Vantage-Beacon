@@ -117,7 +117,7 @@ export default function InboxPage() {
               className={[
                 'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
                 activeFilter === f
-                  ? 'bg-neutral-900 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'text-neutral-600 hover:bg-neutral-100',
               ].join(' ')}
             >

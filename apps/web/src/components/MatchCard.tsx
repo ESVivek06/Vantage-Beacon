@@ -116,7 +116,7 @@ export function MatchCard({
     <article
       className={[
         'relative bg-neutral-0 border rounded-lg shadow-sm p-5 hover:shadow-md transition-all duration-normal',
-        accepted ? 'border-l-4 border-l-success-500 border-neutral-200' : 'border-neutral-200',
+        accepted ? 'border-l-4 border-l-success-600 border-neutral-200' : 'border-neutral-200',
         passed ? 'opacity-50' : '',
       ].join(' ')}
     >
