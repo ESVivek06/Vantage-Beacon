@@ -9,6 +9,8 @@ const { auth } = NextAuth(authConfig);
 const API_AUTH_PREFIX = '/api/auth';
 // Routes that are always public
 const PUBLIC_PATHS = new Set(['/', '/about', '/auth/sign-in', '/auth/sign-up', '/auth/error', '/offline']);
+// Public path prefixes (all sub-routes are public without authentication)
+const PUBLIC_PREFIXES = ['/join/', '/invite/', '/api/join'];
 // Static asset patterns handled before the matcher, but guard here too
 const STATIC_PREFIXES = ['/_next/', '/favicon.ico'];
 
@@ -23,10 +25,17 @@ export default auth(async function middleware(req: NextRequest & { auth: unknown
 
   const session = (req as unknown as { auth: { user?: { id?: string } } | null }).auth;
   const isLoggedIn = !!session?.user;
-  const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith('/auth/');
+  const isPublic =
+    PUBLIC_PATHS.has(pathname) ||
+    pathname.startsWith('/auth/') ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isPublic) {
-    if (isLoggedIn) return NextResponse.redirect(new URL('/feed', nextUrl));
+    // Logged-in users are redirected away from auth/landing pages but not from join/invite flows
+    const isJoinOrInvite = pathname.startsWith('/join') || pathname.startsWith('/invite');
+    if (isLoggedIn && !isJoinOrInvite && pathname === '/') {
+      return NextResponse.redirect(new URL('/feed', nextUrl));
+    }
     return NextResponse.next();
   }
 

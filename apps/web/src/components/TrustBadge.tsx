@@ -35,6 +35,7 @@ const roleColors: Record<string, { bg: string; text: string; border: string }> =
   founder: { bg: '#F0FDFA', text: '#0D9488', border: '#99F6E4' },
   investor: { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A' },
   supplier: { bg: '#FDF2F8', text: '#DB2777', border: '#FBCFE8' },
+  stakeholder: { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
 };
 
 const roleLabels: Record<string, string> = {
@@ -42,6 +43,7 @@ const roleLabels: Record<string, string> = {
   founder: 'Founder',
   investor: 'Investor',
   supplier: 'Supplier',
+  stakeholder: 'Stakeholder',
 };
 
 export function RoleBadge({ role }: { role: string }) {
