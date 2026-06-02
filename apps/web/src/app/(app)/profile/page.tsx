@@ -47,7 +47,7 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">My Profile</h1>
+        <h1 className="text-display-sm font-bold">My Profile</h1>
         <Button variant="outline" size="sm" asChild>
           <Link href="/profile/edit" className="gap-2 inline-flex items-center">
             <Pencil className="h-4 w-4" />
@@ -74,16 +74,16 @@ export default async function ProfilePage() {
                 <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', roleColor(role))}>
                   {roleLabel(role)}
                 </span>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1 text-sm text-neutral-500">
                   <MapPin className="h-3.5 w-3.5" />
                   {region}
                 </span>
               </div>
               {user?.profile?.bio && (
-                <p className="mt-3 text-sm text-muted-foreground">{user.profile.bio}</p>
+                <p className="mt-3 text-sm text-neutral-500">{user.profile.bio}</p>
               )}
               {!user?.profile?.bio && (
-                <p className="mt-3 text-sm text-muted-foreground italic">No bio yet. Add one to help others find you.</p>
+                <p className="mt-3 text-sm text-neutral-500 italic">No bio yet. Add one to help others find you.</p>
               )}
             </div>
           </div>
@@ -147,7 +147,7 @@ export default async function ProfilePage() {
       {!user && (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-neutral-500">
               Complete your profile to start matching with others.
             </p>
             <Button className="mt-4" asChild>

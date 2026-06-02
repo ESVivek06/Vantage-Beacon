@@ -2,11 +2,14 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { createClient } from '@/lib/graphql';
+import { CREATE_PROJECT_MUTATION } from '@/lib/queries';
 
 const opportunityTypes = ['Role', 'Contract', 'Advisory', 'Investment Offer', 'Partnership'];
 const locationOptions = ['UK', 'India', 'North America', 'Remote', 'Global'];
@@ -18,8 +21,10 @@ const STEPS = ['Basics', 'Requirements', 'Preview'];
 
 export default function PostOpportunityPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -62,10 +67,41 @@ export default function PostOpportunityPage() {
 
   async function handleSubmit() {
     setSubmitting(true);
-    // API call would go here
-    await new Promise((r) => setTimeout(r, 600));
-    setSubmitting(false);
-    router.push('/opportunities');
+    setSubmitError('');
+    try {
+      const sessionUser = session?.user as { region?: string } | undefined;
+      const region = sessionUser?.region ?? 'UK';
+      const budget = (budgetMin || budgetMax)
+        ? {
+            min: budgetMin || undefined,
+            max: budgetMax || undefined,
+            compensation,
+            type: compensation,
+          }
+        : { compensation };
+      const client = createClient();
+      await client.request<{ createProject: { id: string } }>(CREATE_PROJECT_MUTATION, {
+        input: {
+          title,
+          description,
+          requiredSkills: skills,
+          budget: {
+            ...budget,
+            opportunityType: type,
+            domain: domain || undefined,
+            location,
+            experience,
+            timeline,
+            niceToHave: niceToHave.length > 0 ? niceToHave : undefined,
+          },
+          region,
+        },
+      });
+      router.push('/opportunities');
+    } catch {
+      setSubmitError('Failed to post opportunity. Please try again.');
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -386,6 +422,9 @@ export default function PostOpportunityPage() {
             </div>
           </div>
 
+          {submitError && (
+            <p className="text-sm text-error-600 text-center">{submitError}</p>
+          )}
           <Button
             variant="primary"
             size="lg"

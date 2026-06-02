@@ -130,12 +130,12 @@ export default function EditProfilePage() {
   const displayName = form.displayName || session?.user?.name || session?.user?.email || 'User';
 
   if (loading) {
-    return <div className="h-48 rounded-lg bg-muted animate-pulse" />;
+    return <div className="h-48 rounded-lg bg-neutral-200 animate-pulse" />;
   }
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
+      <h1 className="text-display-sm font-bold mb-6">Edit Profile</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Photo */}
@@ -169,7 +169,7 @@ export default function EditProfilePage() {
                   <Upload className="h-4 w-4" />
                   {uploading ? 'Uploading…' : 'Upload Photo'}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-1">JPG, PNG up to 5MB</p>
+                <p className="text-xs text-neutral-500 mt-1">JPG, PNG up to 5MB</p>
               </div>
             </div>
           </CardContent>
@@ -225,7 +225,7 @@ export default function EditProfilePage() {
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, skills: f.skills.filter((s) => s !== skill) }))}
-                      className="hover:text-destructive"
+                      className="hover:text-error-600"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -259,7 +259,7 @@ export default function EditProfilePage() {
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, tags: f.tags.filter((t) => t !== tag) }))}
-                      className="hover:text-destructive"
+                      className="hover:text-error-600"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -270,7 +270,7 @@ export default function EditProfilePage() {
           </CardContent>
         </Card>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-error-600">{error}</p>}
         {success && <p className="text-sm text-success-600">{success}</p>}
 
         <div className="flex gap-3">

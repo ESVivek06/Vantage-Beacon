@@ -194,7 +194,7 @@ export function Navigation({ user }: NavProps) {
 
                   <div className="p-2 border-t border-neutral-100">
                     <Link
-                      href="/profile"
+                      href="/settings"
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2 px-2 py-2 rounded-md text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >

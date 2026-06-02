@@ -35,11 +35,11 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-neutral-50">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold text-accent">V.B</Link>
-          <p className="text-muted-foreground mt-2 text-sm">Welcome back</p>
+          <p className="text-neutral-500 mt-2 text-sm">Welcome back</p>
         </div>
 
         <Card>
@@ -68,10 +68,10 @@ export default function SignInPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+                <span className="w-full border-t border-neutral-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+                <span className="bg-neutral-0 px-2 text-neutral-500">or continue with email</span>
               </div>
             </div>
 
@@ -106,14 +106,14 @@ export default function SignInPage() {
                 />
               </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p className="text-sm text-error-600">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in…' : 'Sign in'}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-neutral-500">
               No account?{' '}
               <Link href="/auth/sign-up" className="text-accent hover:underline font-medium">
                 Sign up

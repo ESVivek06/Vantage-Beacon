@@ -134,7 +134,7 @@ export default function CreateProjectPage() {
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, skills: f.skills.filter((s) => s !== skill) }))}
-                      className="hover:text-destructive"
+                      className="hover:text-error-600"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -184,7 +184,7 @@ export default function CreateProjectPage() {
           </CardContent>
         </Card>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-error-600">{error}</p>}
 
         <div className="flex gap-3">
           <Button type="submit" disabled={saving}>

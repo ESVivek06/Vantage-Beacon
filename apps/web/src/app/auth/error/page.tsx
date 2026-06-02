@@ -19,19 +19,19 @@ export default function AuthErrorPage() {
   const message = MESSAGES[error] ?? MESSAGES.Default;
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-neutral-50">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-destructive" />
+              <div className="h-10 w-10 rounded-full bg-error-50 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-error-600" />
               </div>
               <CardTitle>Authentication error</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-sm text-neutral-500">{message}</p>
             <Button variant="outline" asChild className="gap-2">
               <Link href="/auth/sign-in">
                 <ArrowLeft className="h-4 w-4" />

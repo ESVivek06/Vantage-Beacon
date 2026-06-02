@@ -41,10 +41,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-neutral-50">
       <div className="w-full max-w-md">
         <div className="mb-6">
-          <Link href="/auth/sign-in" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link href="/auth/sign-in" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900">
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
@@ -60,13 +60,13 @@ export default function ForgotPasswordPage() {
           <CardContent>
             {sent ? (
               <div className="text-center py-4">
-                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="h-12 w-12 rounded-full bg-success-100 flex items-center justify-center mx-auto mb-4">
+                  <svg className="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <p className="font-medium text-sm">Check your email</p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-neutral-500 mt-1">
                   We&apos;ve sent a password reset link to <strong>{email}</strong>
                 </p>
               </div>
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                {error && <p className="text-sm text-destructive">{error}</p>}
+                {error && <p className="text-sm text-error-600">{error}</p>}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Sending…' : 'Send reset link'}

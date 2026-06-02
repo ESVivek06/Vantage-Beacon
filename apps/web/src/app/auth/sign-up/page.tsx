@@ -55,11 +55,11 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-muted/30 py-8">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-neutral-50 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold text-accent">V.B</Link>
-          <p className="text-muted-foreground mt-2 text-sm">Create your account</p>
+          <p className="text-neutral-500 mt-2 text-sm">Create your account</p>
         </div>
 
         <Card>
@@ -88,10 +88,10 @@ export default function SignUpPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+                <span className="w-full border-t border-neutral-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or sign up with email</span>
+                <span className="bg-neutral-0 px-2 text-neutral-500">or sign up with email</span>
               </div>
             </div>
 
@@ -121,7 +121,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password * <span className="text-muted-foreground font-normal">(min 8 characters)</span></Label>
+                <Label htmlFor="password">Password * <span className="text-neutral-500 font-normal">(min 8 characters)</span></Label>
                 <Input
                   id="password"
                   type="password"
@@ -158,14 +158,14 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p className="text-sm text-error-600">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating account…' : 'Create account'}
               </Button>
             </form>
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-neutral-500">
               Already have an account?{' '}
               <Link href="/auth/sign-in" className="text-accent hover:underline font-medium">
                 Sign in
