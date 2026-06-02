@@ -18,8 +18,10 @@ export class MatchingService {
     if (!profile) throw new Error(`Profile not found for user ${request.userId}`);
 
     // Ensure requester has an embedding; generate + persist if missing.
+    // embeddingVector is a pgvector Unsupported() column — Prisma doesn't type it; cast via unknown.
+    const profileAny = profile as unknown as Record<string, unknown>;
     let queryVector: number[];
-    if (!profile.embeddingVector) {
+    if (!profileAny['embeddingVector']) {
       const text = buildProfileText({
         bio: profile.bio,
         skills: profile.skills,
@@ -27,9 +29,8 @@ export class MatchingService {
       });
       queryVector = await this.embedder.embed(text, profile.userId, 'user', true);
     } else {
-      // embeddingVector is Unsupported("vector(1536)") from Prisma — comes back as
-      // a string like "[0.1,0.2,...]" from the raw DB driver.
-      queryVector = parseVector(profile.embeddingVector as unknown as string);
+      // embeddingVector comes back as a string like "[0.1,0.2,...]" from the raw DB driver.
+      queryVector = parseVector(profileAny['embeddingVector'] as string);
     }
 
     const mlResponse = await this._callMlService(request, queryVector);

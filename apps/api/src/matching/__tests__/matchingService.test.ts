@@ -55,7 +55,7 @@ afterEach(() => {
 
 describe('MatchingService.findMatches', () => {
   it('returns ranked matches with matchId, score, and explanation', async () => {
-    const db = makePrismaMock() as unknown as Parameters<typeof MatchingService>[0];
+    const db = makePrismaMock() as unknown as ConstructorParameters<typeof MatchingService>[0];
     const svc = new MatchingService(db, new MockEmbeddingProvider());
 
     const results = await svc.findMatches({
@@ -79,7 +79,7 @@ describe('MatchingService.findMatches', () => {
       profile: { findFirst: jest.fn().mockResolvedValue(null) },
       match: { create: jest.fn() },
       $transaction: jest.fn(),
-    } as unknown as Parameters<typeof MatchingService>[0];
+    } as unknown as ConstructorParameters<typeof MatchingService>[0];
 
     const svc = new MatchingService(db, new MockEmbeddingProvider());
 
@@ -89,7 +89,7 @@ describe('MatchingService.findMatches', () => {
   });
 
   it('calls embedder.embed when embeddingVector is null', async () => {
-    const db = makePrismaMock({ embeddingVector: null }) as unknown as Parameters<typeof MatchingService>[0];
+    const db = makePrismaMock({ embeddingVector: null }) as unknown as ConstructorParameters<typeof MatchingService>[0];
     const embedder = new MockEmbeddingProvider();
     const embedSpy = jest.spyOn(embedder, 'embed');
 
@@ -107,7 +107,7 @@ describe('MatchingService.findMatches', () => {
 
   it('skips embedder.embed when vector already stored', async () => {
     const storedVector = '[' + new Array(1536).fill('0.1').join(',') + ']';
-    const db = makePrismaMock({ embeddingVector: storedVector }) as unknown as Parameters<typeof MatchingService>[0];
+    const db = makePrismaMock({ embeddingVector: storedVector }) as unknown as ConstructorParameters<typeof MatchingService>[0];
     const embedder = new MockEmbeddingProvider();
     const embedSpy = jest.spyOn(embedder, 'embed');
 
@@ -118,11 +118,11 @@ describe('MatchingService.findMatches', () => {
   });
 
   it('persists each match result as a Match row', async () => {
-    const db = makePrismaMock() as unknown as Parameters<typeof MatchingService>[0];
+    const db = makePrismaMock() as unknown as ConstructorParameters<typeof MatchingService>[0];
     const svc = new MatchingService(db, new MockEmbeddingProvider());
 
     await svc.findMatches({ userId: 'user-1', matchType: 'user_to_user' });
 
-    expect((db as ReturnType<typeof makePrismaMock>).$transaction).toHaveBeenCalledTimes(1);
+    expect((db as unknown as ReturnType<typeof makePrismaMock>).$transaction).toHaveBeenCalledTimes(1);
   });
 });

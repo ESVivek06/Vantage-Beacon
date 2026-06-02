@@ -3,7 +3,7 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   SESv2Client,
   PutSuppressedDestinationCommand,
-  SuppressedDestinationReason,
+  SuppressionListReason,
 } from '@aws-sdk/client-sesv2';
 
 const ses = new SESClient({ region: process.env.AWS_REGION ?? 'eu-west-2' });
@@ -43,7 +43,7 @@ export async function addToSuppressionList(email: string): Promise<void> {
   await sesv2.send(
     new PutSuppressedDestinationCommand({
       EmailAddress: email,
-      Reason: SuppressedDestinationReason.COMPLAINT,
+      Reason: SuppressionListReason.COMPLAINT,
     }),
   );
 }

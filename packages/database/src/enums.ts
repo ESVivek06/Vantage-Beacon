@@ -63,6 +63,12 @@ export const AuditAction = {
   data_delete: 'data_delete',
   consent_granted: 'consent_granted',
   consent_revoked: 'consent_revoked',
+  erasure_requested: 'erasure_requested',
+  erasure_completed: 'erasure_completed',
+  data_export_requested: 'data_export_requested',
+  data_export_completed: 'data_export_completed',
+  dpa_accepted: 'dpa_accepted',
+  cookie_consent_given: 'cookie_consent_given',
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];
 

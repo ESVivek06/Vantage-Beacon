@@ -49,7 +49,8 @@ export function getEmailQueue(): Queue<EmailJobData> {
       },
     });
   }
-  return _emailQueue;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return _emailQueue!;
 }
 
 export async function enqueueWelcomeEmail(opts: Omit<WelcomeJobData, 'type'>): Promise<void> {

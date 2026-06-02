@@ -35,7 +35,8 @@ export async function createProject(
       title: input.title,
       description: input.description,
       requiredSkills: input.requiredSkills,
-      budget: input.budget as unknown | undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      budget: input.budget as any,
       region: input.region,
     },
     include: { owner: { include: { profile: true } } },
@@ -61,7 +62,8 @@ export async function updateProject(
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.requiredSkills !== undefined ? { requiredSkills: input.requiredSkills } : {}),
       ...(input.budget !== undefined
-        ? { budget: input.budget as unknown }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? { budget: input.budget as any }
         : {}),
     },
     include: { owner: { include: { profile: true } } },

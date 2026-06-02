@@ -1,9 +1,10 @@
-import { Queue } from 'bullmq';
+import { Queue, type ConnectionOptions } from 'bullmq';
 import IORedis from 'ioredis';
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
 
-export const redisConnection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+// bullmq bundles its own ioredis; cast to avoid dual-ioredis type conflicts
+export const redisConnection = new IORedis(redisUrl, { maxRetriesPerRequest: null }) as unknown as ConnectionOptions;
 
 export const hardDeleteQueue = new Queue<HardDeleteJobData>('gdpr-hard-delete', {
   connection: redisConnection,

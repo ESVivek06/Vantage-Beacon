@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
+import type { Adapter } from 'next-auth/adapters';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { getClient } from '@vb/database';
@@ -11,9 +12,19 @@ function db() {
   return _db;
 }
 
+// Defer PrismaAdapter construction until first method call so `next build`
+// doesn't throw when DATABASE_URL_UK isn't set in the build environment.
+let _adapter: Adapter | undefined;
+const lazyAdapter: Adapter = new Proxy({} as Adapter, {
+  get(_, prop) {
+    if (!_adapter) _adapter = PrismaAdapter(db());
+    return (_adapter as Record<string | symbol, unknown>)[prop];
+  },
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(db()),
+  adapter: lazyAdapter,
   providers: [
     ...authConfig.providers,
     Credentials({

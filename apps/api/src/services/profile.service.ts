@@ -44,7 +44,7 @@ export async function updateProfile(
 
   const hasUserDataUpdate = input.profileData !== undefined || input.photoKey !== undefined;
 
-  return db.$transaction(async (tx: typeof db) => {
+  return db.$transaction(async (tx) => {
     const profile = await tx.profile.update({
       where: { userId },
       data: profileUpdateData,
@@ -62,7 +62,8 @@ export async function updateProfile(
       };
       await tx.user.update({
         where: { id: userId },
-        data: { profileData: merged },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { profileData: merged as any },
       });
       // Re-fetch so the returned profile has the updated user.profileData
       return tx.profile.findUniqueOrThrow({
