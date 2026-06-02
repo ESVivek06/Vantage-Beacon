@@ -199,6 +199,19 @@ resource "aws_lb_listener" "https" {
   }
 }
 
+# Internal HTTP listener for ML service (port 8000) — not TLS, internal cluster use only
+resource "aws_lb_listener" "ml" {
+  count             = contains(keys(var.services), "ml") ? 1 : 0
+  load_balancer_arn = aws_lb.this.arn
+  port              = 8000
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.services["ml"].arn
+  }
+}
+
 resource "aws_lb_listener_rule" "web" {
   count        = var.certificate_arn != "" ? 1 : 0
   listener_arn = aws_lb_listener.https[0].arn

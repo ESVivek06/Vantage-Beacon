@@ -23,10 +23,14 @@ variable "db_password" { type = string; sensitive = true }
 variable "db_username" { type = string; default = "vbadmin" }
 variable "jwt_secret"  { type = string; sensitive = true }
 variable "nextauth_secret" { type = string; sensitive = true }
-variable "upstash_redis_url" { type = string; sensitive = true }
-variable "openai_api_key"   { type = string; sensitive = true }
-variable "datadog_api_key"  { type = string; sensitive = true }
-variable "acm_cert_arn"     { type = string; default = "" }
+variable "auth_secret"     { type = string; sensitive = true }
+variable "upstash_redis_url"   { type = string; sensitive = true }
+variable "openai_api_key"      { type = string; sensitive = true }
+variable "datadog_api_key"     { type = string; sensitive = true }
+variable "unsubscribe_secret"  { type = string; sensitive = true }
+variable "ses_from_address"    { type = string; default = "noreply@staging.vb.com" }
+variable "ml_service_url"      { type = string; default = "" }
+variable "acm_cert_arn"        { type = string; default = "" }
 
 locals {
   project = "vb"
@@ -109,6 +113,22 @@ resource "aws_secretsmanager_secret_version" "s3_bucket" {
   secret_string = module.s3.profile_images_bucket
 }
 
+resource "aws_secretsmanager_secret" "auth_secret" {
+  name = "/${local.project}/${local.environment}/auth-secret"
+}
+resource "aws_secretsmanager_secret_version" "auth_secret" {
+  secret_id     = aws_secretsmanager_secret.auth_secret.id
+  secret_string = var.auth_secret
+}
+
+resource "aws_secretsmanager_secret" "unsubscribe_secret" {
+  name = "/${local.project}/${local.environment}/unsubscribe-secret"
+}
+resource "aws_secretsmanager_secret_version" "unsubscribe_secret" {
+  secret_id     = aws_secretsmanager_secret.unsubscribe_secret.id
+  secret_string = var.unsubscribe_secret
+}
+
 # ── RDS ──────────────────────────────────────────────────────────────────────
 module "rds" {
   source            = "../modules/rds"
@@ -159,10 +179,13 @@ module "ecs" {
         NODE_ENV               = "staging"
         REGION                 = "UK"
         NEXT_PUBLIC_API_URL    = "https://api.staging.vb.com"
+        ML_SERVICE_URL         = var.ml_service_url
       }
       secret_arns = {
         NEXTAUTH_SECRET = aws_secretsmanager_secret_version.nextauth_secret.arn
+        AUTH_SECRET     = aws_secretsmanager_secret_version.auth_secret.arn
         DATABASE_URL    = aws_secretsmanager_secret_version.db_url.arn
+        DATABASE_URL_UK = aws_secretsmanager_secret_version.db_url.arn
       }
     }
     api = {
@@ -173,16 +196,26 @@ module "ecs" {
       desired_count = 1
       health_check  = "/health"
       env_vars = {
-        NODE_ENV = "staging"
-        REGION   = "UK"
-        PORT     = "4000"
+        NODE_ENV         = "staging"
+        REGION           = "UK"
+        DEFAULT_REGION   = "UK"
+        PORT             = "4000"
+        SES_FROM_ADDRESS = var.ses_from_address
+        ML_SERVICE_URL   = var.ml_service_url
+        S3_BUCKET_URL    = "https://${module.s3.profile_images_bucket}.s3.eu-west-2.amazonaws.com"
       }
       secret_arns = {
-        DATABASE_URL   = aws_secretsmanager_secret_version.db_url.arn
-        REDIS_URL      = aws_secretsmanager_secret_version.redis_url.arn
-        JWT_SECRET     = aws_secretsmanager_secret_version.jwt_secret.arn
-        OPENAI_API_KEY = aws_secretsmanager_secret_version.openai_key.arn
-        S3_BUCKET      = aws_secretsmanager_secret_version.s3_bucket.arn
+        DATABASE_URL    = aws_secretsmanager_secret_version.db_url.arn
+        DATABASE_URL_UK = aws_secretsmanager_secret_version.db_url.arn
+        # Staging is single-region; NA and IN alias to UK DB
+        DATABASE_URL_NA = aws_secretsmanager_secret_version.db_url.arn
+        DATABASE_URL_IN = aws_secretsmanager_secret_version.db_url.arn
+        REDIS_URL       = aws_secretsmanager_secret_version.redis_url.arn
+        JWT_SECRET      = aws_secretsmanager_secret_version.jwt_secret.arn
+        AUTH_SECRET     = aws_secretsmanager_secret_version.auth_secret.arn
+        OPENAI_API_KEY  = aws_secretsmanager_secret_version.openai_key.arn
+        S3_BUCKET       = aws_secretsmanager_secret_version.s3_bucket.arn
+        UNSUBSCRIBE_SECRET = aws_secretsmanager_secret_version.unsubscribe_secret.arn
       }
     }
     ml = {
@@ -206,6 +239,7 @@ module "ecs" {
 }
 
 output "alb_dns"        { value = module.ecs.alb_dns_name }
+output "ml_service_url" { value = "http://${module.ecs.alb_dns_name}:8000" }
 output "ecr_urls"       { value = module.ecr.repository_urls }
 output "rds_endpoint"   { value = module.rds.endpoint; sensitive = true }
 output "s3_images"      { value = module.s3.profile_images_bucket }
