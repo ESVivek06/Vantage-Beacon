@@ -53,13 +53,30 @@ echo "── Health checks ──"
 check_json_field "API /health status" "${API_URL}/health" ".status" "ok"
 check_http       "Web /api/health"    "${STAGING_URL}/api/health"
 
-# ── 2. Auth — sign-in page reachable ─────────────────────────────────────────
+# ── 2. Auth — sign-in page + OAuth providers configured ──────────────────────
 echo ""
 echo "── Auth flow ──"
 check_http "Sign-in page" "${STAGING_URL}/auth/signin"
 
-# Auth API introspection endpoint (NextAuth v5 exposes /api/auth/providers)
-check_http "Auth providers endpoint" "${STAGING_URL}/api/auth/providers"
+# /api/auth/providers returns JSON listing Google and LinkedIn providers
+PROVIDERS_BODY="$(curl -s --max-time 10 "${STAGING_URL}/api/auth/providers")"
+PROVIDERS_COUNT="$(echo "${PROVIDERS_BODY}" | jq 'length' 2>/dev/null || echo 0)"
+if [[ "${PROVIDERS_COUNT}" -ge 2 ]]; then
+  pass "Auth providers configured (${PROVIDERS_COUNT} providers: $(echo "${PROVIDERS_BODY}" | jq -r 'keys | join(", ")' 2>/dev/null))"
+else
+  fail "Auth providers — expected ≥2 (Google + LinkedIn), got ${PROVIDERS_COUNT}. Check GOOGLE_CLIENT_ID/LINKEDIN_CLIENT_ID env vars."
+fi
+
+# Verify sign-up flow is not gated by waitlist (WAITLIST_MODE=false)
+JOIN_STATUS="$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+  -X POST "${STAGING_URL}/api/join" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"smoke-test@staging.vb.com","role":"FOUNDER"}' || true)"
+if [[ "${JOIN_STATUS}" == "200" || "${JOIN_STATUS}" == "201" || "${JOIN_STATUS}" == "409" ]]; then
+  pass "Join endpoint reachable (HTTP ${JOIN_STATUS} — waitlist mode off)"
+else
+  fail "Join endpoint — unexpected HTTP ${JOIN_STATUS} (expected 200/201/409)"
+fi
 
 # ── 3. GraphQL API reachable ──────────────────────────────────────────────────
 echo ""

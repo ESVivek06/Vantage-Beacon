@@ -24,11 +24,18 @@ variable "db_username" { type = string; default = "vbadmin" }
 variable "jwt_secret"  { type = string; sensitive = true }
 variable "nextauth_secret" { type = string; sensitive = true }
 variable "auth_secret"     { type = string; sensitive = true }
-variable "upstash_redis_url"   { type = string; sensitive = true }
-variable "openai_api_key"      { type = string; sensitive = true }
-variable "datadog_api_key"     { type = string; sensitive = true }
-variable "unsubscribe_secret"  { type = string; sensitive = true }
+variable "upstash_redis_url"         { type = string; sensitive = true }
+variable "upstash_redis_rest_url"    { type = string; sensitive = true }
+variable "upstash_redis_rest_token"  { type = string; sensitive = true }
+variable "openai_api_key"            { type = string; sensitive = true }
+variable "datadog_api_key"           { type = string; sensitive = true }
+variable "unsubscribe_secret"        { type = string; sensitive = true }
+variable "google_client_id"          { type = string; sensitive = true }
+variable "google_client_secret"      { type = string; sensitive = true }
+variable "linkedin_client_id"        { type = string; sensitive = true }
+variable "linkedin_client_secret"    { type = string; sensitive = true }
 variable "ses_from_address"    { type = string; default = "noreply@staging.vb.com" }
+variable "app_url"             { type = string; default = "https://app.staging.vb.com" }
 variable "ml_service_url"      { type = string; default = "" }
 variable "acm_cert_arn"        { type = string; default = "" }
 
@@ -129,6 +136,54 @@ resource "aws_secretsmanager_secret_version" "unsubscribe_secret" {
   secret_string = var.unsubscribe_secret
 }
 
+resource "aws_secretsmanager_secret" "upstash_redis_rest_url" {
+  name = "/${local.project}/${local.environment}/upstash-redis-rest-url"
+}
+resource "aws_secretsmanager_secret_version" "upstash_redis_rest_url" {
+  secret_id     = aws_secretsmanager_secret.upstash_redis_rest_url.id
+  secret_string = var.upstash_redis_rest_url
+}
+
+resource "aws_secretsmanager_secret" "upstash_redis_rest_token" {
+  name = "/${local.project}/${local.environment}/upstash-redis-rest-token"
+}
+resource "aws_secretsmanager_secret_version" "upstash_redis_rest_token" {
+  secret_id     = aws_secretsmanager_secret.upstash_redis_rest_token.id
+  secret_string = var.upstash_redis_rest_token
+}
+
+resource "aws_secretsmanager_secret" "google_client_id" {
+  name = "/${local.project}/${local.environment}/google-client-id"
+}
+resource "aws_secretsmanager_secret_version" "google_client_id" {
+  secret_id     = aws_secretsmanager_secret.google_client_id.id
+  secret_string = var.google_client_id
+}
+
+resource "aws_secretsmanager_secret" "google_client_secret" {
+  name = "/${local.project}/${local.environment}/google-client-secret"
+}
+resource "aws_secretsmanager_secret_version" "google_client_secret" {
+  secret_id     = aws_secretsmanager_secret.google_client_secret.id
+  secret_string = var.google_client_secret
+}
+
+resource "aws_secretsmanager_secret" "linkedin_client_id" {
+  name = "/${local.project}/${local.environment}/linkedin-client-id"
+}
+resource "aws_secretsmanager_secret_version" "linkedin_client_id" {
+  secret_id     = aws_secretsmanager_secret.linkedin_client_id.id
+  secret_string = var.linkedin_client_id
+}
+
+resource "aws_secretsmanager_secret" "linkedin_client_secret" {
+  name = "/${local.project}/${local.environment}/linkedin-client-secret"
+}
+resource "aws_secretsmanager_secret_version" "linkedin_client_secret" {
+  secret_id     = aws_secretsmanager_secret.linkedin_client_secret.id
+  secret_string = var.linkedin_client_secret
+}
+
 # ── RDS ──────────────────────────────────────────────────────────────────────
 module "rds" {
   source            = "../modules/rds"
@@ -180,12 +235,19 @@ module "ecs" {
         REGION                 = "UK"
         NEXT_PUBLIC_API_URL    = "https://api.staging.vb.com"
         ML_SERVICE_URL         = var.ml_service_url
+        WAITLIST_MODE          = "false"
       }
       secret_arns = {
-        NEXTAUTH_SECRET = aws_secretsmanager_secret_version.nextauth_secret.arn
-        AUTH_SECRET     = aws_secretsmanager_secret_version.auth_secret.arn
-        DATABASE_URL    = aws_secretsmanager_secret_version.db_url.arn
-        DATABASE_URL_UK = aws_secretsmanager_secret_version.db_url.arn
+        NEXTAUTH_SECRET            = aws_secretsmanager_secret_version.nextauth_secret.arn
+        AUTH_SECRET                = aws_secretsmanager_secret_version.auth_secret.arn
+        DATABASE_URL               = aws_secretsmanager_secret_version.db_url.arn
+        DATABASE_URL_UK            = aws_secretsmanager_secret_version.db_url.arn
+        UPSTASH_REDIS_REST_URL     = aws_secretsmanager_secret_version.upstash_redis_rest_url.arn
+        UPSTASH_REDIS_REST_TOKEN   = aws_secretsmanager_secret_version.upstash_redis_rest_token.arn
+        GOOGLE_CLIENT_ID           = aws_secretsmanager_secret_version.google_client_id.arn
+        GOOGLE_CLIENT_SECRET       = aws_secretsmanager_secret_version.google_client_secret.arn
+        LINKEDIN_CLIENT_ID         = aws_secretsmanager_secret_version.linkedin_client_id.arn
+        LINKEDIN_CLIENT_SECRET     = aws_secretsmanager_secret_version.linkedin_client_secret.arn
       }
     }
     api = {
@@ -200,9 +262,12 @@ module "ecs" {
         REGION           = "UK"
         DEFAULT_REGION   = "UK"
         PORT             = "4000"
+        AWS_REGION       = "eu-west-2"
+        APP_URL          = var.app_url
         SES_FROM_ADDRESS = var.ses_from_address
         ML_SERVICE_URL   = var.ml_service_url
         S3_BUCKET_URL    = "https://${module.s3.profile_images_bucket}.s3.eu-west-2.amazonaws.com"
+        GDPR_EXPORT_BUCKET = module.s3.data_exports_bucket
       }
       secret_arns = {
         DATABASE_URL    = aws_secretsmanager_secret_version.db_url.arn
@@ -214,6 +279,8 @@ module "ecs" {
         JWT_SECRET      = aws_secretsmanager_secret_version.jwt_secret.arn
         AUTH_SECRET     = aws_secretsmanager_secret_version.auth_secret.arn
         OPENAI_API_KEY  = aws_secretsmanager_secret_version.openai_key.arn
+        # S3_BUCKET_NAME is what the API's s3.service.ts reads (throws if empty)
+        S3_BUCKET_NAME  = aws_secretsmanager_secret_version.s3_bucket.arn
         S3_BUCKET       = aws_secretsmanager_secret_version.s3_bucket.arn
         UNSUBSCRIBE_SECRET = aws_secretsmanager_secret_version.unsubscribe_secret.arn
       }

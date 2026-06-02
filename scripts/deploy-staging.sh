@@ -4,6 +4,33 @@
 # Usage: ./scripts/deploy-staging.sh [--services api,web,ml]
 set -euo pipefail
 
+# Verify terraform was applied with all required secrets before deploying
+REQUIRED_SECRETS=(
+  "auth-secret"
+  "unsubscribe-secret"
+  "upstash-redis-rest-url"
+  "upstash-redis-rest-token"
+  "google-client-id"
+  "google-client-secret"
+  "linkedin-client-id"
+  "linkedin-client-secret"
+)
+echo "==> Checking Secrets Manager for required secrets…"
+MISSING=0
+for secret in "${REQUIRED_SECRETS[@]}"; do
+  if ! aws secretsmanager describe-secret --secret-id "/vb/staging/${secret}" \
+       --query "Name" --output text >/dev/null 2>&1; then
+    echo "  MISSING: /vb/staging/${secret}" >&2
+    ((MISSING++))
+  fi
+done
+if [[ "${MISSING}" -gt 0 ]]; then
+  echo "ERROR: ${MISSING} secret(s) missing — run terraform apply first." >&2
+  exit 1
+fi
+echo "  All secrets present ✓"
+echo ""
+
 AWS_REGION="${AWS_REGION:-eu-west-2}"
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ECR_BASE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
