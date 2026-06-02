@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 
 const opportunityTypes = ['Role', 'Contract', 'Advisory', 'Investment Offer', 'Partnership'];
 const locationOptions = ['UK', 'India', 'North America', 'Remote', 'Global'];
-const compensationTypes = ['Fixed Fee', 'Day Rate', 'Equity', 'Revenue Share', 'Negotiable'];
+const compensationTypes = ['Fixed Fee', 'Day Rate', 'Negotiable'];
 const experienceLevels = ['Junior', 'Mid', 'Senior', 'Lead', 'Any'];
 const timelineOptions = ['Immediate', '1–4 weeks', '1–3 months', 'Long-term', 'Flexible'];
 

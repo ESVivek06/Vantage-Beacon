@@ -125,7 +125,8 @@ export default function FeedPage() {
               {visibleMatches.map((user) => {
                 const name = user.profile?.displayName ?? user.email;
                 const skills = user.profile?.skills ?? [];
-                const randomScore = 50 + Math.floor(Math.random() * 45);
+                const idHash = user.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+                const randomScore = 50 + (idHash % 45);
                 const reasons = [
                   'Skills overlap',
                   `Based in ${user.region ?? 'your region'}`,

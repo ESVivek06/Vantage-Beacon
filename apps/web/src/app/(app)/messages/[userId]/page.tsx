@@ -150,8 +150,8 @@ export default function ConversationPage() {
                     className={cn(
                       'max-w-xs lg:max-w-md rounded-2xl px-4 py-2 text-sm',
                       isMine
-                        ? 'bg-accent text-accent-foreground rounded-br-sm'
-                        : 'bg-muted text-foreground rounded-bl-sm',
+                        ? 'bg-primary-600 text-white rounded-br-sm'
+                        : 'bg-neutral-100 text-neutral-900 rounded-bl-sm',
                     )}
                   >
                     {msg.content}

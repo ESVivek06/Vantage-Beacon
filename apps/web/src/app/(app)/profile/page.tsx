@@ -134,7 +134,7 @@ export default async function ProfilePage() {
                   className="flex items-center justify-between rounded-md border border-border p-3 hover:bg-muted transition-colors"
                 >
                   <span className="font-medium text-sm">{project.title}</span>
-                  <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize', project.status === 'open' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')}>
+                  <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize', project.status === 'open' ? 'bg-success-100 text-success-700' : 'bg-neutral-100 text-neutral-600')}>
                     {project.status.replace('_', ' ')}
                   </span>
                 </Link>
