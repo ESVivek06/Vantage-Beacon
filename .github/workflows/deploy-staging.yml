@@ -3,6 +3,12 @@ name: Deploy to Staging
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deploy (e.g. "operator unblock VAN-62")'
+        required: false
+        default: 'manual trigger'
 
 env:
   AWS_REGION: eu-west-2
