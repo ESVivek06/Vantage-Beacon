@@ -166,4 +166,62 @@
     from { stroke-dashoffset: 100; }
     to { stroke-dashoffset: var(--arc-offset); }
   }
+
+  /* OB-04 pulsing orb */
+  @keyframes pc-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.15); opacity: 0.6; }
+  }
+  .animate-pc-pulse { animation: pc-pulse 2s ease-in-out infinite; }
+  .animate-pc-pulse-d1 { animation: pc-pulse 2s 0.3s ease-in-out infinite; }
+  .animate-pc-pulse-d2 { animation: pc-pulse 2s 0.6s ease-in-out infinite; }
+
+  /* OB-05 confetti fall */
+  @keyframes pc-fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Match card reveal stagger */
+  @keyframes card-reveal {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-card-reveal { animation: card-reveal 0.4s ease-out forwards; }
+
+  /* Toast slide-in */
+  @keyframes toast-slide-in {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .animate-toast-slide-in { animation: toast-slide-in 0.3s ease-out forwards; }
+
+  /* Bottom sheet slide-up */
+  @keyframes sheet-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .animate-sheet-slide-up { animation: sheet-slide-up 0.35s ease-out forwards; }
+
+  /* Toast drain bar */
+  @keyframes drain { from { width: 100%; } to { width: 0%; } }
+  .animate-drain { animation: drain 6s linear forwards; }
+
+  /* Loading bar fill */
+  @keyframes bar-fill { from { width: 0%; } to { width: 100%; } }
+  .animate-bar-fill { animation: bar-fill 4s ease forwards; }
+
+  /* Modal mount */
+  @keyframes modal-mount {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-modal-mount { animation: modal-mount 0.25s ease-out forwards; }
+
+  /* Scale in for success icon */
+  @keyframes scale-in {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .animate-scale-in { animation: scale-in 0.3s var(--easing-spring) forwards; }
 }

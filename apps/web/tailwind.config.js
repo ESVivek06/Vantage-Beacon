@@ -32,6 +32,7 @@ module.exports = {
           700: '#0F766E',
           800: '#115E59',
           900: '#134E4A',
+          950: '#042F2E',
           DEFAULT: '#14B8A6',
           foreground: '#FFFFFF',
         },
@@ -65,6 +66,19 @@ module.exports = {
           800: '#1E293B',
           900: '#0F172A',
           950: '#020617',
+        },
+        // Amber (alias for accent, explicit for spec references)
+        amber: {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
+          900: '#78350F',
         },
         // Semantic — Success
         success: {
