@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createClient } from '@/lib/graphql';
-import { CREATE_PROJECT_MUTATION } from '@/lib/queries';
 
 const opportunityTypes = ['Role', 'Contract', 'Advisory', 'Investment Offer', 'Partnership'];
 const locationOptions = ['UK', 'India', 'North America', 'Remote', 'Global'];
@@ -21,7 +18,6 @@ const STEPS = ['Basics', 'Requirements', 'Preview'];
 
 export default function PostOpportunityPage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -69,34 +65,30 @@ export default function PostOpportunityPage() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const sessionUser = session?.user as { region?: string } | undefined;
-      const region = sessionUser?.region ?? 'UK';
-      const budget = (budgetMin || budgetMax)
-        ? {
-            min: budgetMin || undefined,
-            max: budgetMax || undefined,
-            compensation,
-            type: compensation,
-          }
-        : { compensation };
-      const client = createClient();
-      await client.request<{ createProject: { id: string } }>(CREATE_PROJECT_MUTATION, {
-        input: {
+      const res = await fetch('/api/opportunities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           title,
+          type,
+          domain,
+          location,
+          compensation,
+          budgetMin,
+          budgetMax,
           description,
-          requiredSkills: skills,
-          budget: {
-            ...budget,
-            opportunityType: type,
-            domain: domain || undefined,
-            location,
-            experience,
-            timeline,
-            niceToHave: niceToHave.length > 0 ? niceToHave : undefined,
-          },
-          region,
-        },
+          skills,
+          experience,
+          timeline,
+          niceToHave,
+        }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSubmitError((data as { error?: string }).error ?? 'Failed to post opportunity. Please try again.');
+        setSubmitting(false);
+        return;
+      }
       router.push('/opportunities');
     } catch {
       setSubmitError('Failed to post opportunity. Please try again.');

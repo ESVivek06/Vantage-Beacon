@@ -131,7 +131,7 @@ export default async function ProfilePage() {
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="flex items-center justify-between rounded-md border border-border p-3 hover:bg-muted transition-colors"
+                  className="flex items-center justify-between rounded-md border border-neutral-200 p-3 hover:bg-neutral-50 transition-colors"
                 >
                   <span className="font-medium text-sm">{project.title}</span>
                   <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize', project.status === 'open' ? 'bg-success-100 text-success-700' : 'bg-neutral-100 text-neutral-600')}>

@@ -58,6 +58,24 @@ variable "datadog_api_key" {
   sensitive = true
 }
 
+variable "datadog_app_key" {
+  type        = string
+  sensitive   = true
+  description = "Datadog Application Key — required by the Terraform provider to manage monitors."
+}
+
+variable "datadog_slack_handle" {
+  type        = string
+  default     = "@slack-ops-alerts"
+  description = "Datadog Slack notification handle for #ops-alerts channel (e.g. '@slack-ops-alerts')."
+}
+
+variable "datadog_pagerduty_handle" {
+  type        = string
+  default     = "@pagerduty"
+  description = "Datadog PagerDuty notification handle for critical alerts (e.g. '@pagerduty-vb')."
+}
+
 variable "email_domain" {
   type    = string
   default = "vb.com"

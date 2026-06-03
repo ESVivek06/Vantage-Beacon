@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    datadog = {
+      source  = "DataDog/datadog"
+      version = "~> 3.0"
+    }
   }
   backend "s3" {
     bucket = "vb-terraform-state"
@@ -17,6 +21,11 @@ terraform {
 provider "aws" {
   alias  = "na"
   region = "us-east-1"
+}
+
+provider "datadog" {
+  api_key = var.datadog_api_key
+  app_key = var.datadog_app_key
 }
 
 provider "aws" {
