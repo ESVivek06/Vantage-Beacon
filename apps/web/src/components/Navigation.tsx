@@ -57,7 +57,7 @@ const roleColors: Record<string, string> = {
 };
 
 const bottomNavItems = [
-  { href: '/feed', label: 'Home', icon: House },
+  { href: '/dashboard', label: 'Home', icon: House },
   { href: '/discover/talent', label: 'Discover', icon: Compass },
   { href: '/feed', label: 'Feed', icon: Sparkles },
   { href: '/inbox', label: 'Inbox', icon: MessageSquare },
