@@ -141,6 +141,42 @@ export const typeDefs = /* GraphQL */ `
     matchedAt: DateTime!
   }
 
+  # Pre-computed quality band — never exposes raw score to UI.
+  enum MatchBand {
+    strong
+    good
+    possible
+    weak
+  }
+
+  # Processing state of the AI match generation pipeline.
+  enum MatchStatus {
+    ready
+    processing
+    failed
+  }
+
+  # A reason chip shown on the MatchCard. key is for analytics only.
+  type MatchReason {
+    label: String!
+    key: String!
+  }
+
+  # A traction signal chip for the Investor MatchCard variant.
+  type TractionSignal {
+    label: String!
+    icon: String!
+    # true = success chip, false = warning chip, null = neutral chip
+    positive: Boolean
+  }
+
+  # A skill chip for Freelancer / Founder MatchCard variants.
+  type SkillOverlapItem {
+    skill: String!
+    # true = success chip (matched), false = neutral chip (required but unmatched)
+    matched: Boolean!
+  }
+
   # Enriched match result returned by matchCandidates — includes resolved profile metadata.
   type MatchResult {
     id: ID!
@@ -153,6 +189,27 @@ export const typeDefs = /* GraphQL */ `
     displayName: String
     region: String
     role: String
+  }
+
+  # Full UI-ready match result with all MatchCard display fields (VAN-140 data contract).
+  type MatchDisplayResult {
+    id: ID!
+    sourceId: ID!
+    targetId: ID!
+    targetType: String!
+    score: Float!
+    explanation: MatchExplanation!
+    matchedAt: DateTime!
+    displayName: String
+    region: String
+    role: String
+    # UI display contract fields
+    matchBand: MatchBand!
+    matchStatus: MatchStatus!
+    matchReasons: [MatchReason!]!
+    aiRationale: String
+    tractionSignals: [TractionSignal!]
+    skillOverlap: [SkillOverlapItem!]
   }
 
   type MatchMetrics {
@@ -251,6 +308,7 @@ export const typeDefs = /* GraphQL */ `
     unreadCount: Int!
     matches(matchType: String!, filters: MatchFilterInput, limit: Int): [Match!]!
     matchCandidates(userId: ID!, role: UserRole!, limit: Int): [MatchResult!]!
+    matchDisplay(userId: ID!, role: UserRole!, limit: Int, requiredSkills: [String!]): [MatchDisplayResult!]!
     matchMetrics(since: DateTime): MatchMetrics!
   }
 

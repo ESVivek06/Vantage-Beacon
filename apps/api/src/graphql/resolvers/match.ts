@@ -2,6 +2,7 @@ import type { GraphQLContext } from '../context';
 import { requireAuth } from '../../lib/rbac';
 import { MatchingService } from '../../matching/matchingService';
 import { MlServiceEmbeddingProvider } from '../../matching/embeddingService';
+import { buildMatchDisplayResult } from '../../matching/matchDisplayService';
 import type { MatchType, MatchFilter } from '../../matching/types';
 
 type UserRole = 'freelancer' | 'founder' | 'investor' | 'supplier' | 'stakeholder';
@@ -79,6 +80,50 @@ export const matchResolvers = {
         region: r.metadata?.region ?? null,
         role: r.metadata?.role ?? null,
       }));
+    },
+
+    matchDisplay: async (
+      _: unknown,
+      {
+        userId,
+        role,
+        limit,
+        requiredSkills,
+      }: { userId: string; role: UserRole; limit?: number; requiredSkills?: string[] },
+      ctx: GraphQLContext,
+    ) => {
+      const caller = requireAuth(ctx);
+      if (caller.sub !== userId) {
+        throw new Error('Forbidden: you can only fetch candidates for your own profile');
+      }
+      const svc = getMatchingService(ctx);
+      const matchType = roleToMatchType(role);
+      const results = await svc.findMatches({
+        userId,
+        matchType,
+        limit: Math.min(limit ?? 20, 100),
+      });
+      return results.map((r) => {
+        const display = buildMatchDisplayResult(r, role, requiredSkills ?? []);
+        return {
+          id: r.matchId,
+          sourceId: userId,
+          targetId: r.targetId,
+          targetType: r.targetType,
+          score: r.score,
+          explanation: r.explanation,
+          matchedAt: new Date(),
+          displayName: r.metadata?.displayName ?? null,
+          region: r.metadata?.region ?? null,
+          role: r.metadata?.role ?? null,
+          matchBand: display.matchBand,
+          matchStatus: display.matchStatus,
+          matchReasons: display.matchReasons,
+          aiRationale: display.aiRationale,
+          tractionSignals: display.tractionSignals,
+          skillOverlap: display.skillOverlap,
+        };
+      });
     },
 
     matchMetrics: async (
