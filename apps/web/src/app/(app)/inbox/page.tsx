@@ -6,9 +6,11 @@ import { useSession } from 'next-auth/react';
 import { MessageSquare, Search, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ComposeModal } from '@/components/ComposeModal';
 import { createClient } from '@/lib/graphql';
 import { CONNECTIONS_QUERY, UNREAD_COUNT_QUERY } from '@/lib/queries';
 import { initials, formatRelative } from '@/lib/utils';
+import { MOCK_THREADS, type MockThread } from '@/lib/messaging-mock-data';
 
 interface Thread {
   userId: string;
@@ -18,6 +20,7 @@ interface Thread {
   lastMessage?: string;
   lastMessageAt?: string;
   unread?: boolean;
+  unreadCount?: number;
 }
 
 const filters = ['All', 'Unread', 'Active'];
@@ -29,6 +32,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const [composeOpen, setComposeOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -57,10 +61,17 @@ export default function InboxPage() {
           };
         });
 
-        setThreads(threadList);
-        setUnreadCount(unreadData.unreadCount);
+        // Fall back to mock data when no real connections exist
+        if (threadList.length === 0) {
+          setThreads(MOCK_THREADS);
+          setUnreadCount(MOCK_THREADS.filter((t) => t.unread).length);
+        } else {
+          setThreads(threadList);
+          setUnreadCount(unreadData.unreadCount);
+        }
       } catch {
-        //
+        setThreads(MOCK_THREADS);
+        setUnreadCount(MOCK_THREADS.filter((t) => t.unread).length);
       } finally {
         setLoading(false);
       }
@@ -75,135 +86,153 @@ export default function InboxPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-64px)] flex">
-      {/* Left panel — conversation list */}
-      <div className="w-full md:w-80 lg:w-96 border-r border-neutral-200 bg-neutral-0 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-neutral-200">
-          <h1 className="text-display-sm font-bold text-neutral-900">Inbox</h1>
-          {unreadCount > 0 && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-600 text-white">
-              {unreadCount}
-            </span>
-          )}
-          <button
-            className="ml-auto h-9 w-9 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-500"
-            aria-label="New conversation"
-          >
-            <Edit className="h-5 w-5" />
-          </button>
-        </div>
+    <>
+      <div className="max-w-7xl mx-auto h-[calc(100vh-64px)] flex">
+        {/* Left panel — conversation list */}
+        <div className="w-full md:w-80 lg:w-96 border-r border-neutral-200 bg-white flex flex-col">
+          {/* Header */}
+          <div className="flex items-center gap-2 p-4 border-b border-neutral-200">
+            <h1 className="text-lg font-bold text-neutral-900 flex-1">Inbox</h1>
+            {unreadCount > 0 && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-600 text-white">
+                {unreadCount}
+              </span>
+            )}
+            <button
+              onClick={() => setComposeOpen(true)}
+              className="h-9 w-9 flex items-center justify-center rounded-md hover:bg-neutral-100 text-neutral-500"
+              aria-label="New conversation"
+            >
+              <Edit className="h-5 w-5" />
+            </button>
+          </div>
 
-        {/* Search */}
-        <div className="p-3 border-b border-neutral-100">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search conversations…"
-              className="w-full h-9 pl-9 pr-3 rounded-sm border-0 bg-neutral-100 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-400"
-            />
+          {/* Search */}
+          <div className="p-3 border-b border-neutral-100">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversations…"
+                className="w-full h-9 pl-9 pr-3 rounded-md border-0 bg-neutral-100 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-400"
+              />
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-1 px-3 py-2 border-b border-neutral-100">
+            {filters.map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className={[
+                  'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  activeFilter === f
+                    ? 'bg-primary-600 text-white'
+                    : 'text-neutral-600 hover:bg-neutral-100',
+                ].join(' ')}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Thread list */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="space-y-0">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 border-b border-neutral-100">
+                    <div className="h-10 w-10 rounded-full bg-neutral-200 animate-pulse shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-2/3 rounded bg-neutral-200 animate-pulse" />
+                      <div className="h-2.5 w-full rounded bg-neutral-200 animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-16 px-4">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
+                <p className="font-medium text-neutral-700">No conversations yet</p>
+                <p className="text-sm text-neutral-500 mt-1">
+                  Express interest in a match to start talking.
+                </p>
+                <Button variant="primary" size="sm" className="mt-4" asChild>
+                  <Link href="/feed">Browse Matches</Link>
+                </Button>
+              </div>
+            ) : (
+              <div>
+                {filtered.map((thread) => (
+                  <Link
+                    key={thread.userId}
+                    href={`/inbox/${thread.userId}`}
+                    className={[
+                      'flex items-center gap-3 px-4 py-3 border-b border-neutral-100 hover:bg-neutral-50 transition-colors',
+                      thread.unread ? 'border-l-2 border-l-primary-600' : '',
+                    ].join(' ')}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="h-10 w-10">
+                        {thread.photoUrl && <AvatarImage src={thread.photoUrl} alt={thread.name} />}
+                        <AvatarFallback className="text-xs bg-primary-100 text-primary-700 font-medium">
+                          {initials(thread.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {thread.unread && (
+                        <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-primary-600 ring-2 ring-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p
+                          className={`text-sm truncate ${thread.unread ? 'font-semibold text-neutral-900' : 'font-medium text-neutral-700'}`}
+                        >
+                          {thread.name}
+                        </p>
+                        <span className="text-xs text-neutral-400 shrink-0">
+                          {thread.lastMessageAt ? formatRelative(thread.lastMessageAt) : ''}
+                        </span>
+                      </div>
+                      <p className="text-xs text-primary-600 truncate mb-0.5 capitalize">
+                        {thread.role} connection
+                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className={`text-xs truncate flex-1 ${thread.unread ? 'text-neutral-700' : 'text-neutral-500'}`}>
+                          {(thread as MockThread).lastMessage ?? 'Start your conversation…'}
+                        </p>
+                        {(thread as MockThread).unreadCount && (thread as MockThread).unreadCount! > 0 && (
+                          <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-primary-600 text-white text-[10px] font-semibold flex items-center justify-center shrink-0">
+                            {(thread as MockThread).unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-1 px-3 py-2 border-b border-neutral-100">
-          {filters.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={[
-                'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-                activeFilter === f
-                  ? 'bg-primary-600 text-white'
-                  : 'text-neutral-600 hover:bg-neutral-100',
-              ].join(' ')}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Thread list */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="space-y-0">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 border-b border-neutral-100">
-                  <div className="h-10 w-10 rounded-full animate-shimmer shrink-0" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-2/3 rounded animate-shimmer" />
-                    <div className="h-2.5 w-full rounded animate-shimmer" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-              <p className="font-medium text-neutral-700">No conversations yet</p>
-              <p className="text-sm text-neutral-500 mt-1">
-                Express interest in a match to start talking.
-              </p>
-              <Button variant="primary" size="sm" className="mt-4" asChild>
-                <Link href="/feed">Browse Matches</Link>
-              </Button>
-            </div>
-          ) : (
-            <div>
-              {filtered.map((thread) => (
-                <Link
-                  key={thread.userId}
-                  href={`/inbox/${thread.userId}`}
-                  className={[
-                    'flex items-center gap-3 px-4 py-3 border-b border-neutral-100 hover:bg-neutral-50 transition-colors relative',
-                    thread.unread ? 'border-l-3 border-l-primary-600' : '',
-                  ].join(' ')}
-                >
-                  <div className="relative shrink-0">
-                    <Avatar className="h-10 w-10">
-                      {thread.photoUrl && <AvatarImage src={thread.photoUrl} alt={thread.name} />}
-                      <AvatarFallback className="text-xs bg-primary-100 text-primary-700 font-medium">
-                        {initials(thread.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {thread.unread && (
-                      <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p
-                        className={`text-sm truncate ${thread.unread ? 'font-semibold text-neutral-900' : 'font-medium text-neutral-700'}`}
-                      >
-                        {thread.name}
-                      </p>
-                      <span className="text-xs text-neutral-400 shrink-0">2h ago</span>
-                    </div>
-                    <p className="text-xs text-primary-600 truncate mb-0.5 capitalize">
-                      {thread.role} connection
-                    </p>
-                    <p className={`text-xs truncate ${thread.unread ? 'text-neutral-700' : 'text-neutral-500'}`}>
-                      Start your conversation…
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+        {/* Right panel placeholder — shown on desktop when no conversation selected */}
+        <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-neutral-50 gap-4">
+          <MessageSquare className="h-16 w-16 text-neutral-300" />
+          <div className="text-center">
+            <p className="text-lg font-medium text-neutral-500">Select a conversation</p>
+            <p className="text-sm text-neutral-400 mt-1">Choose from your inbox on the left</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setComposeOpen(true)}>
+            <Edit className="h-4 w-4 mr-1.5" />
+            New Message
+          </Button>
         </div>
       </div>
 
-      {/* Right panel placeholder — shown on desktop when no conversation selected */}
-      <div className="hidden md:flex flex-1 items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <MessageSquare className="h-16 w-16 mx-auto mb-4 text-neutral-300" />
-          <p className="text-lg font-medium text-neutral-500">Select a conversation</p>
-          <p className="text-sm text-neutral-400 mt-1">Choose from your inbox on the left</p>
-        </div>
-      </div>
-    </div>
+      <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+    </>
   );
 }

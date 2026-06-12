@@ -11,6 +11,7 @@ import { TrustBadgeT0, TrustBadgeT1 } from '@/components/TrustBadge';
 import { createClient } from '@/lib/graphql';
 import { MESSAGES_QUERY, SEND_MESSAGE_MUTATION, MARK_MESSAGES_READ_MUTATION, USER_QUERY } from '@/lib/queries';
 import { cn, initials, formatRelative } from '@/lib/utils';
+import { MOCK_MESSAGES, MOCK_USERS } from '@/lib/messaging-mock-data';
 
 interface Message {
   id: string;
@@ -51,11 +52,20 @@ export default function InboxConversationPage() {
           client.request<{ messages: Message[] }>(MESSAGES_QUERY, { withUserId: userId, limit: 50 }),
           client.request<{ user: OtherUser }>(USER_QUERY, { id: userId }),
         ]);
-        setMessages(msgData.messages.slice().reverse());
+        const reversed = msgData.messages.slice().reverse();
+        if (reversed.length === 0 && MOCK_MESSAGES[userId]) {
+          setMessages(MOCK_MESSAGES[userId]);
+        } else {
+          setMessages(reversed);
+        }
         setOtherUser(userData.user);
         await client.request(MARK_MESSAGES_READ_MUTATION, { fromUserId: userId });
       } catch {
-        //
+        const mockUser = MOCK_USERS[userId];
+        if (mockUser) {
+          setOtherUser({ id: mockUser.id, email: mockUser.email, role: mockUser.role, profile: { displayName: mockUser.name, verified: mockUser.verified } });
+          setMessages(MOCK_MESSAGES[userId] ?? []);
+        }
       } finally {
         setLoading(false);
       }

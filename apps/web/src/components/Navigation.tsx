@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import {
   Home as House,
   Compass,
@@ -19,11 +19,13 @@ import {
   TrendingUp,
   Package,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { initials } from '@/lib/utils';
+import { createClient } from '@/lib/graphql';
+import { CONNECTIONS_QUERY } from '@/lib/queries';
 
 interface NavProps {
   user: {
@@ -73,9 +75,31 @@ const desktopNavLinks = [
 
 export function Navigation({ user }: NavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const displayName = user.name ?? user.email ?? 'User';
   const role = user.role ?? 'freelancer';
+
+  useEffect(() => {
+    const sessionUser = session?.user as { id?: string } | undefined;
+    if (!sessionUser?.id) return;
+    const client = createClient();
+    client
+      .request<{ connections: Array<{ status: string; receiver: { id: string } }> }>(
+        CONNECTIONS_QUERY,
+        {},
+      )
+      .then((data) => {
+        const count = data.connections.filter(
+          (c) => c.status === 'pending' && c.receiver.id === sessionUser.id,
+        ).length;
+        setPendingCount(count);
+      })
+      .catch(() => {});
+  }, [(session?.user as { id?: string } | undefined)?.id]);
+
   const RoleIcon = roleIcons[role] ?? Briefcase;
   const roleLabel = roleLabels[role] ?? role;
   const roleColorClass = roleColors[role] ?? 'text-primary-600 bg-primary-50';
@@ -124,12 +148,18 @@ export function Navigation({ user }: NavProps) {
           )}
 
           {/* Notification bell */}
-          <button
+          <Link
+            href="/notifications"
             className="relative h-9 w-9 flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors duration-fast"
-            aria-label="Notifications"
+            aria-label={pendingCount > 0 ? `${pendingCount} pending connections` : 'Notifications'}
           >
             <Bell className="h-5 w-5" />
-          </button>
+            {pendingCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-error-600 text-white text-2xs font-semibold pointer-events-none">
+                {pendingCount > 9 ? '9+' : pendingCount}
+              </span>
+            )}
+          </Link>
 
           {/* Role chip + Avatar dropdown */}
           <div className="relative">
@@ -223,10 +253,16 @@ export function Navigation({ user }: NavProps) {
         </Link>
         <div className="flex items-center gap-2">
           <button
-            className="h-9 w-9 flex items-center justify-center rounded-md text-neutral-500"
-            aria-label="Notifications"
+            onClick={() => router.push('/connections')}
+            className="relative h-9 w-9 flex items-center justify-center rounded-md text-neutral-500"
+            aria-label={pendingCount > 0 ? `${pendingCount} pending connections` : 'Notifications'}
           >
             <Bell className="h-5 w-5" />
+            {pendingCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-error-600 text-white text-2xs font-semibold pointer-events-none">
+                {pendingCount > 9 ? '9+' : pendingCount}
+              </span>
+            )}
           </button>
           <Avatar className="h-8 w-8">
             {user.image && <AvatarImage src={user.image} alt={displayName} />}
