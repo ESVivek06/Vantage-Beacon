@@ -41,6 +41,13 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Bootstrap ECR repositories (idempotent)
+        run: |
+          for repo in vb/staging/api vb/staging/web vb/staging/ml; do
+            aws ecr describe-repositories --repository-names "$repo" --region ${{ env.AWS_REGION }} 2>/dev/null || \
+              aws ecr create-repository --repository-name "$repo" --region ${{ env.AWS_REGION }}
+          done
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -103,6 +110,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service vb-staging-uk-api \
+            --desired-count 1 \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -111,6 +119,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service vb-staging-uk-web \
+            --desired-count 1 \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
@@ -119,6 +128,7 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service vb-staging-uk-ml \
+            --desired-count 1 \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }}
 
