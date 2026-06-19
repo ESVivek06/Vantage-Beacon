@@ -56,7 +56,7 @@ export function deriveRolePair(
   targetRole: string | null | undefined,
   targetType: 'user' | 'project',
 ): RolePair {
-  if (callerRole === 'freelancer' && targetType === 'project') return 'freelancer';
+  if (callerRole === 'freelancer' && (targetType === 'project' || (targetType === 'user' && targetRole === 'founder'))) return 'freelancer';
   if (callerRole === 'founder' && targetType === 'user') {
     if (targetRole === 'freelancer' || targetRole === 'supplier') return 'founder_freelancer';
     if (targetRole === 'investor') return 'founder_investor';
