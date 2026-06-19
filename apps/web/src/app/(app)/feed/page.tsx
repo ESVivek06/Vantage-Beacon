@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Sparkles, Filter, Clock, Globe, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MatchCard } from '@/components/MatchCard';
+import { MatchDetailSheet, type MatchDetail } from '@/components/MatchDetailSheet';
 import { createClient } from '@/lib/graphql';
 import { USERS_QUERY, SEND_CONNECTION_MUTATION } from '@/lib/queries';
 import { roleLabel } from '@/lib/utils';
@@ -35,6 +36,7 @@ export default function FeedPage() {
   const [interestSent, setInterestSent] = useState<Record<string, boolean>>({});
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   const [passed, setPassed] = useState<Record<string, boolean>>({});
+  const [detailMatch, setDetailMatch] = useState<MatchDetail | null>(null);
 
   async function loadMatches() {
     setLoading(true);
@@ -133,31 +135,49 @@ export default function FeedPage() {
                   `${roleLabel(user.role)} match`,
                 ].slice(0, 2);
 
+                const matchDetail: MatchDetail = {
+                  id: user.id,
+                  name,
+                  role: user.role,
+                  location: user.region,
+                  photoUrl: user.photoUrl,
+                  matchScore: randomScore,
+                  verified: user.profile?.verified,
+                  bio: user.profile?.bio ?? undefined,
+                  matchReasons: reasons,
+                  skills,
+                };
+
                 return (
-                  <MatchCard
+                  <div
                     key={user.id}
-                    id={user.id}
-                    name={name}
-                    title={user.profile?.bio?.slice(0, 60) || undefined}
-                    role={user.role}
-                    location={user.region}
-                    skills={skills}
-                    matchingSkills={skills.slice(0, 2)}
-                    matchReasons={reasons}
-                    photoUrl={user.photoUrl}
-                    verified={user.profile?.verified}
-                    matchScore={randomScore}
-                    interestSent={interestSent[user.id]}
-                    accepted={accepted[user.id]}
-                    passed={passed[user.id]}
-                    onExpressInterest={handleExpressInterest}
-                    onAccept={(id) => setAccepted((p) => ({ ...p, [id]: true }))}
-                    onPass={(id) =>
-                      setPassed((p) =>
-                        p[id] ? { ...p, [id]: false } : { ...p, [id]: true },
-                      )
-                    }
-                  />
+                    className="cursor-pointer"
+                    onClick={() => setDetailMatch(matchDetail)}
+                  >
+                    <MatchCard
+                      id={user.id}
+                      name={name}
+                      title={user.profile?.bio?.slice(0, 60) || undefined}
+                      role={user.role}
+                      location={user.region}
+                      skills={skills}
+                      matchingSkills={skills.slice(0, 2)}
+                      matchReasons={reasons}
+                      photoUrl={user.photoUrl}
+                      verified={user.profile?.verified}
+                      matchScore={randomScore}
+                      interestSent={interestSent[user.id]}
+                      accepted={accepted[user.id]}
+                      passed={passed[user.id]}
+                      onExpressInterest={handleExpressInterest}
+                      onAccept={(id) => setAccepted((p) => ({ ...p, [id]: true }))}
+                      onPass={(id) =>
+                        setPassed((p) =>
+                          p[id] ? { ...p, [id]: false } : { ...p, [id]: true },
+                        )
+                      }
+                    />
+                  </div>
                 );
               })}
 
@@ -170,6 +190,16 @@ export default function FeedPage() {
             </div>
           )}
         </div>
+
+        {/* Match detail sheet */}
+        {detailMatch && (
+          <MatchDetailSheet
+            match={detailMatch}
+            onClose={() => setDetailMatch(null)}
+            onConnect={(id) => { handleExpressInterest(id); setDetailMatch(null); }}
+            onSave={() => {}}
+          />
+        )}
 
         {/* Right rail — desktop only */}
         <aside className="hidden lg:block w-80 shrink-0">

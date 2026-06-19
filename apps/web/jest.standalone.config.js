@@ -11,6 +11,8 @@ module.exports = {
     '^react$': path.join(repoRoot, 'node_modules/react'),
     '^react-dom$': path.join(repoRoot, 'node_modules/react-dom'),
     '^react-dom/client$': path.join(repoRoot, 'node_modules/react-dom/client'),
+    '^next/link$': '<rootDir>/src/__mocks__/nextLink.js',
+    '^next/image$': '<rootDir>/src/__mocks__/nextImage.js',
   },
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': [require.resolve('babel-jest'), {

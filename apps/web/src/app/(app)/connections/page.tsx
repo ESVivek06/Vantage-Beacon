@@ -77,17 +77,17 @@ export default function ConnectionsPage() {
       <h1 className="text-2xl font-bold mb-6">Connections</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 w-fit">
+      <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg mb-6 w-fit">
         {(['all', 'pending', 'accepted'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
               'px-4 py-1.5 rounded-md text-sm font-medium capitalize transition-colors',
-              tab === t ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground',
+              tab === t ? 'bg-neutral-0 shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-900',
             )}
           >
-            {t}{t === 'pending' && pendingCount > 0 && <span className="ml-1.5 bg-accent text-accent-foreground rounded-full px-1.5 py-0.5 text-xs">{pendingCount}</span>}
+            {t}{t === 'pending' && pendingCount > 0 && <span className="ml-1.5 bg-primary-100 text-primary-700 rounded-full px-1.5 py-0.5 text-xs">{pendingCount}</span>}
           </button>
         ))}
       </div>
@@ -95,11 +95,11 @@ export default function ConnectionsPage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+            <div key={i} className="h-20 rounded-lg bg-neutral-100 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="text-center py-16 text-neutral-500">
           <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
           <p>{tab === 'pending' ? 'No pending requests.' : 'No connections yet.'}</p>
           <Button className="mt-4" asChild>
@@ -125,14 +125,14 @@ export default function ConnectionsPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Link href={`/profile/${other.id}`} className="font-medium hover:text-accent truncate">
+                        <Link href={`/profile/${other.id}`} className="font-medium hover:text-primary-600 truncate">
                           {otherName}
                         </Link>
                         <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', statusColor(conn.status))}>
                           {conn.status}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                      <p className="text-xs text-neutral-500 mt-0.5 capitalize">
                         {roleLabel(other.role)} · {conn.kind} · {formatRelative(conn.createdAt)}
                         {isPending && (isIncoming ? ' · Incoming request' : ' · Request sent')}
                       </p>

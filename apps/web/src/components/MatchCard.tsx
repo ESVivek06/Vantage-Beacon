@@ -35,53 +35,39 @@ function MatchScoreArc({ score = 75 }: { score?: number }) {
   const circumference = 2 * Math.PI * radius;
   const arcLength = circumference * 0.75;
   const filled = arcLength * (score / 100);
-  const offset = arcLength - filled;
 
-  let color = '#94A3B8';
-  let QualityIcon = Zap;
-  let qualityLabel = 'fair';
-  if (score >= 85) {
-    color = '#22C55E';
-    QualityIcon = Star;
-    qualityLabel = 'strong';
-  } else if (score >= 65) {
-    color = '#F59E0B';
-    QualityIcon = TrendingUp;
-    qualityLabel = 'good';
-  } else if (score >= 40) {
-    color = '#14B8A6';
-    QualityIcon = Zap;
-    qualityLabel = 'potential';
-  }
+  let arcColor = '#94A3B8';
+  if (score >= 85) arcColor = '#22C55E';
+  else if (score >= 65) arcColor = '#F59E0B';
+  else if (score >= 40) arcColor = '#14B8A6';
 
   return (
-    <div className="relative w-14 h-14" role="img" aria-label={`Match quality: ${qualityLabel}`}>
+    <div
+      className="relative w-14 h-14"
+      role="img"
+      aria-label={`AI match score: ${score} percent`}
+    >
       <svg viewBox="0 0 52 52" className="w-full h-full -rotate-[135deg]">
-        {/* Track */}
         <circle
-          cx="26"
-          cy="26"
-          r={radius}
-          fill="none"
-          stroke="#E2E8F0"
-          strokeWidth="4"
+          cx="26" cy="26" r={radius}
+          fill="none" stroke="#E2E8F0" strokeWidth="4"
           strokeDasharray={`${arcLength} ${circumference - arcLength}`}
           strokeLinecap="round"
         />
-        {/* Fill */}
         <circle
-          cx="26"
-          cy="26"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="4"
+          cx="26" cy="26" r={radius}
+          fill="none" stroke={arcColor} strokeWidth="4"
           strokeDasharray={`${filled} ${circumference - filled}`}
           strokeLinecap="round"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <QualityIcon className="h-4 w-4" style={{ color }} aria-hidden="true" />
+        <span
+          style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5', lineHeight: 1 }}
+          aria-hidden="true"
+        >
+          {score}
+        </span>
       </div>
     </div>
   );
