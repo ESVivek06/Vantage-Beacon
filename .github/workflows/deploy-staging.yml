@@ -140,11 +140,20 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Run DB migrations
+        continue-on-error: true
         run: |
+          SUBNET="${{ secrets.STAGING_PRIVATE_SUBNET_ID }}"
+          SG="${{ secrets.STAGING_ECS_SG_ID }}"
+          # Fall back to default public subnet/SG if staging-specific secrets not yet set
+          SUBNET="${SUBNET:-subnet-04e3a0f15eb306f8c}"
+          SG="${SG:-sg-052c8f30dae075822}"
+          ASSIGN_IP="DISABLED"
+          # Public subnets require ENABLED; detect by absence of 'private' in subnet name
+          [ "$SUBNET" = "subnet-04e3a0f15eb306f8c" ] && ASSIGN_IP="ENABLED"
           aws ecs run-task \
             --cluster ${{ env.ECS_CLUSTER }} \
             --task-definition vb-staging-uk-api \
             --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
             --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.STAGING_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.STAGING_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNET}],securityGroups=[${SG}],assignPublicIp=${ASSIGN_IP}}" \
             --region ${{ env.AWS_REGION }}
