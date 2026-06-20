@@ -12,7 +12,6 @@ RUN yarn install --frozen-lockfile --production=false
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN yarn workspace @vb/database build
 RUN yarn workspace @vb/shared build
 RUN yarn workspace @vb/api build
 
