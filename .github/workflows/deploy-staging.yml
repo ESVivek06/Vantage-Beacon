@@ -12,7 +12,7 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
+  ECR_REGISTRY: 345307375390.dkr.ecr.eu-west-2.amazonaws.com
   ECS_CLUSTER: vb-staging-uk
 
 jobs:
@@ -98,29 +98,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy API service
+      - name: Deploy services (scale to 1 + force new deployment)
         run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service vb-staging-uk-api \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Deploy Web service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service vb-staging-uk-web \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Deploy ML service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service vb-staging-uk-ml \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+          for svc in vb-staging-uk-api vb-staging-uk-web vb-staging-uk-ml; do
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service "$svc" \
+              --desired-count 1 \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }}
+          done
 
       - name: Wait for services to stabilise
         run: |
@@ -129,12 +116,29 @@ jobs:
             --services vb-staging-uk-api vb-staging-uk-web vb-staging-uk-ml \
             --region ${{ env.AWS_REGION }}
 
-      - name: Run DB migrations
+      - name: Run DB migrations (best-effort)
+        continue-on-error: true
         run: |
+          SUBNET="${{ secrets.STAGING_PRIVATE_SUBNET_ID }}"
+          SG="${{ secrets.STAGING_ECS_SG_ID }}"
+          # Fall back to default public subnet if secrets not configured
+          if [ -z "$SUBNET" ]; then
+            SUBNET=$(aws ec2 describe-subnets --region ${{ env.AWS_REGION }} \
+              --filters "Name=defaultForAz,Values=true" \
+              --query 'Subnets[0].SubnetId' --output text)
+            ASSIGN_PUBLIC="ENABLED"
+          else
+            ASSIGN_PUBLIC="DISABLED"
+          fi
+          if [ -z "$SG" ]; then
+            SG=$(aws ec2 describe-security-groups --region ${{ env.AWS_REGION }} \
+              --filters "Name=group-name,Values=default" \
+              --query 'SecurityGroups[0].GroupId' --output text)
+          fi
           aws ecs run-task \
             --cluster ${{ env.ECS_CLUSTER }} \
             --task-definition vb-staging-uk-api \
             --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
             --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.STAGING_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.STAGING_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNET}],securityGroups=[${SG}],assignPublicIp=${ASSIGN_PUBLIC}}" \
             --region ${{ env.AWS_REGION }}
