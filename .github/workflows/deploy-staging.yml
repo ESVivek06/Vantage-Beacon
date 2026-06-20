@@ -12,7 +12,7 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com
+  ECR_REGISTRY: 345307375390.dkr.ecr.eu-west-2.amazonaws.com
   ECS_CLUSTER: vb-staging-uk
 
 jobs:
