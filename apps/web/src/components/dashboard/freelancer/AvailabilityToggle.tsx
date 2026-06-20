@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface AvailabilityToggleProps {
@@ -11,6 +11,10 @@ export interface AvailabilityToggleProps {
 export function AvailabilityToggle({ defaultAvailable = false, onChange }: AvailabilityToggleProps) {
   const [available, setAvailable] = useState(defaultAvailable);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (defaultAvailable !== undefined) setAvailable(defaultAvailable);
+  }, [defaultAvailable]);
 
   const toggle = async () => {
     if (saving) return;
