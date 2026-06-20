@@ -10,11 +10,26 @@ export interface AvailabilityToggleProps {
 
 export function AvailabilityToggle({ defaultAvailable = false, onChange }: AvailabilityToggleProps) {
   const [available, setAvailable] = useState(defaultAvailable);
+  const [saving, setSaving] = useState(false);
 
-  const toggle = () => {
+  const toggle = async () => {
+    if (saving) return;
     const next = !available;
     setAvailable(next);
     onChange?.(next);
+    setSaving(true);
+    try {
+      await fetch('/api/user/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ availabilityTag: next ? 'open' : 'busy' }),
+      });
+    } catch {
+      setAvailable(!next);
+      onChange?.(!next);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -26,6 +41,8 @@ export function AvailabilityToggle({ defaultAvailable = false, onChange }: Avail
         role="switch"
         aria-checked={available}
         aria-labelledby="availability-label"
+        aria-busy={saving}
+        disabled={saving}
         onClick={toggle}
         className={cn(
           'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full',
