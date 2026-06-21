@@ -91,8 +91,10 @@ module.exports = {
         // Semantic — Warning
         warning: {
           50: '#FFFBEB',
+          100: '#FEF3C7',
           500: '#EAB308',
           600: '#CA8A04',
+          700: '#B45309',
         },
         // Semantic — Error
         error: {

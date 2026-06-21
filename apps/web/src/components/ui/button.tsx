@@ -29,7 +29,7 @@ const buttonVariants = cva(
           'text-neutral-700 border border-neutral-200 bg-white hover:bg-neutral-100 active:scale-[0.98]',
       },
       size: {
-        xs: 'h-7 px-2.5 text-xs rounded-sm gap-1',
+        xs: 'h-7 px-2.5 text-xs rounded-md gap-1',
         sm: 'h-9 px-3.5 text-sm rounded-md gap-1.5',
         md: 'h-10 px-4 text-sm rounded-md gap-2',
         lg: 'h-11 px-5 text-md rounded-md gap-2',

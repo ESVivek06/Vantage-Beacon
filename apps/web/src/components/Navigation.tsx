@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { initials } from '@/lib/utils';
 import { createClient } from '@/lib/graphql';
 import { CONNECTIONS_QUERY } from '@/lib/queries';
+import { NotificationPanel } from './NotificationPanel';
 
 interface NavProps {
   user: {
@@ -78,10 +79,19 @@ export function Navigation({ user }: NavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const displayName = user.name ?? user.email ?? 'User';
   const role = user.role ?? 'freelancer';
 
+  useEffect(() => {
+    fetch('/api/notifications?unread=true')
+      .then((r) => r.json())
+      .then((data) => setUnreadCount(data.unreadCount ?? 0))
+      .catch(() => {});
+  }, []);
+
+  // Keep legacy pendingCount for backward compat with existing connection logic
   useEffect(() => {
     const sessionUser = session?.user as { id?: string } | undefined;
     if (!sessionUser?.id) return;
@@ -95,7 +105,8 @@ export function Navigation({ user }: NavProps) {
         const count = data.connections.filter(
           (c) => c.status === 'pending' && c.receiver.id === sessionUser.id,
         ).length;
-        setPendingCount(count);
+        // Merge connection pending count into unread badge if notifications API has no data
+        setUnreadCount((prev) => (prev > 0 ? prev : count));
       })
       .catch(() => {});
   }, [(session?.user as { id?: string } | undefined)?.id]);
@@ -147,19 +158,26 @@ export function Navigation({ user }: NavProps) {
             </Button>
           )}
 
-          {/* Notification bell */}
-          <Link
-            href="/notifications"
-            className="relative h-9 w-9 flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors duration-fast"
-            aria-label={pendingCount > 0 ? `${pendingCount} pending connections` : 'Notifications'}
-          >
-            <Bell className="h-5 w-5" />
-            {pendingCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-error-600 text-white text-2xs font-semibold pointer-events-none">
-                {pendingCount > 9 ? '9+' : pendingCount}
-              </span>
-            )}
-          </Link>
+          {/* Notification bell — desktop: opens panel */}
+          <div className="relative">
+            <button
+              onClick={() => setNotifOpen(!notifOpen)}
+              className="relative h-9 w-9 flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors duration-fast"
+              aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-error-600 text-white text-2xs font-semibold pointer-events-none">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            <NotificationPanel
+              open={notifOpen}
+              onClose={() => setNotifOpen(false)}
+            />
+          </div>
 
           {/* Role chip + Avatar dropdown */}
           <div className="relative">
@@ -252,15 +270,16 @@ export function Navigation({ user }: NavProps) {
           V.B
         </Link>
         <div className="flex items-center gap-2">
+          {/* Mobile bell — navigates to /notifications */}
           <button
-            onClick={() => router.push('/connections')}
+            onClick={() => router.push('/notifications')}
             className="relative h-9 w-9 flex items-center justify-center rounded-md text-neutral-500"
-            aria-label={pendingCount > 0 ? `${pendingCount} pending connections` : 'Notifications'}
+            aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
           >
             <Bell className="h-5 w-5" />
-            {pendingCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-error-600 text-white text-2xs font-semibold pointer-events-none">
-                {pendingCount > 9 ? '9+' : pendingCount}
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
           </button>
