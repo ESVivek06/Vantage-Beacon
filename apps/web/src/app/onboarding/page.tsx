@@ -23,13 +23,24 @@ export default function OnboardingWelcomePage() {
   const router = useRouter();
   const [selected, setSelected] = useState<string>('freelancer');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleContinue() {
     if (!selected || saving) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 400));
-    setSaving(false);
-    router.push('/onboarding/profile');
+    setError(null);
+    try {
+      const res = await fetch('/api/user/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: selected }),
+      });
+      if (!res.ok) throw new Error('Failed to save role');
+      router.push('/onboarding/profile');
+    } catch {
+      setError('Could not save your role. Please try again.');
+      setSaving(false);
+    }
   }
 
   return (
@@ -98,6 +109,9 @@ export default function OnboardingWelcomePage() {
           >
             {saving ? 'Saving…' : 'Confirm & Continue →'}
           </Button>
+          {error && (
+            <p className="text-sm text-error-600 text-center" role="alert">{error}</p>
+          )}
           <p className="text-sm text-neutral-500 text-center">
             Already have an account?{' '}
             <Link href="/auth/sign-in" className="text-primary-600 font-medium hover:underline">

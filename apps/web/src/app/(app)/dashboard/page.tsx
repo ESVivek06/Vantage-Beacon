@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ChevronRight, LayoutDashboard, Users, Inbox, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn, initials, roleLabel, roleColor } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 // Shared
 import { AnalyticsBar } from '@/components/dashboard/AnalyticsBar';
@@ -45,7 +46,15 @@ const MATCH_TABS = [
   { id: 'passed', label: 'Passed' },
 ];
 
-function FreelancerDashboard({ userName, profileCompletion }: { userName: string; profileCompletion: number }) {
+function FreelancerDashboard({
+  userName,
+  profileCompletion,
+  defaultAvailable,
+}: {
+  userName: string;
+  profileCompletion: number;
+  defaultAvailable?: boolean;
+}) {
   const [activeTab, setActiveTab] = useState('all');
   const [inboxItems] = useState<InboxItemProps[]>([]);
   const [matches] = useState<MatchCardProps[]>([]);
@@ -72,7 +81,7 @@ function FreelancerDashboard({ userName, profileCompletion }: { userName: string
         </div>
 
         <div className="bg-white rounded-xl border border-neutral-200 shadow-xs p-5">
-          <AvailabilityToggle />
+          <AvailabilityToggle defaultAvailable={defaultAvailable} />
         </div>
 
         {inboxItems.length > 0 && (
@@ -99,7 +108,7 @@ function FreelancerDashboard({ userName, profileCompletion }: { userName: string
             <p className="font-medium text-neutral-900 truncate">{userName}</p>
             <p className="text-xs text-neutral-500">{profileCompletion}% profile complete</p>
           </div>
-          <AvailabilityToggle />
+          <AvailabilityToggle defaultAvailable={defaultAvailable} />
         </div>
 
         {/* Match filter tabs */}
@@ -257,39 +266,32 @@ function FounderDashboard({ userName }: { userName: string }) {
 
 // ─── Mobile bottom tab bar ────────────────────────────────────────────────────
 
-type MobileTab = 'home' | 'matches' | 'inbox';
-
-function MobileTabBar({
-  active,
-  onChange,
-}: {
-  active: MobileTab;
-  onChange: (t: MobileTab) => void;
-}) {
-  const tabs: { id: MobileTab; label: string; icon: React.ElementType }[] = [
-    { id: 'home', label: 'Home', icon: LayoutDashboard },
-    { id: 'matches', label: 'Matches', icon: Users },
-    { id: 'inbox', label: 'Inbox', icon: Inbox },
+function MobileNav() {
+  const pathname = usePathname();
+  const tabs = [
+    { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+    { href: '/feed', label: 'Matches', icon: Users },
+    { href: '/inbox', label: 'Inbox', icon: Inbox },
   ];
   return (
     <nav
       aria-label="Mobile navigation"
       className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-neutral-200 flex sm:hidden"
     >
-      {tabs.map(({ id, label, icon: Icon }) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          aria-current={active === id ? 'page' : undefined}
+      {tabs.map(({ href, label, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          aria-current={pathname === href ? 'page' : undefined}
           className={cn(
             'flex-1 flex flex-col items-center justify-center py-2 gap-0.5',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset',
-            active === id ? 'text-primary-600' : 'text-neutral-500',
+            pathname === href ? 'text-primary-600' : 'text-neutral-500',
           )}
         >
           <Icon className="h-5 w-5" aria-hidden="true" />
           <span className="text-2xs font-medium">{label}</span>
-        </button>
+        </Link>
       ))}
     </nav>
   );
@@ -304,9 +306,9 @@ export default function DashboardPage() {
   const userRole = (user?.role as string) ?? 'freelancer';
   const isFounder = userRole === 'founder';
 
-  const [mobileTab, setMobileTab] = useState<MobileTab>('home');
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsMetrics, setAnalyticsMetrics] = useState<Metric[] | undefined>(undefined);
+  const [userAvailable, setUserAvailable] = useState<boolean | undefined>(undefined);
 
   const profileCompletion = 50;
 
@@ -315,6 +317,13 @@ export default function DashboardPage() {
       setAnalyticsLoading(false);
     }, 1500);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/user/me')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.available !== undefined) setUserAvailable(data.available); })
+      .catch(() => {});
   }, []);
 
   return (
@@ -330,11 +339,15 @@ export default function DashboardPage() {
       {isFounder ? (
         <FounderDashboard userName={userName} />
       ) : (
-        <FreelancerDashboard userName={userName} profileCompletion={profileCompletion} />
+        <FreelancerDashboard
+          userName={userName}
+          profileCompletion={profileCompletion}
+          defaultAvailable={userAvailable}
+        />
       )}
 
-      {/* Mobile bottom tab bar (<640px) */}
-      <MobileTabBar active={mobileTab} onChange={setMobileTab} />
+      {/* Mobile bottom tab bar (<640px) — uses Link navigation */}
+      <MobileNav />
     </div>
   );
 }
