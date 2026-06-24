@@ -26,7 +26,7 @@ interface UserMatch {
   };
 }
 
-const feedFilters = ['All', 'Strong Matches', 'Same Timezone', 'Available Now'];
+const feedFilters = ['All'];
 
 export default function FeedPage() {
   const { data: session } = useSession();

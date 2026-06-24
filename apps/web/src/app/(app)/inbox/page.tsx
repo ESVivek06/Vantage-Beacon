@@ -57,7 +57,7 @@ export default function InboxPage() {
             name: other.profile?.displayName ?? other.id,
             photoUrl: other.photoUrl,
             role: other.role,
-            unread: Math.random() > 0.6,
+            unread: false,
           };
         });
 

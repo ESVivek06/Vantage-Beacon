@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { Navigation } from '@/components/Navigation';
+import { MobileNav } from '@/components/MobileNav';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -10,9 +11,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-neutral-50">
       <Navigation user={session.user} />
       {/* Desktop: padding-top 64px for top nav; Mobile: 56px top + 56px bottom */}
-      <main className="pt-14 md:pt-16 pb-14 md:pb-0 min-h-screen">
+      <main className="pt-14 md:pt-16 pb-14 sm:pb-0 min-h-screen">
         {children}
       </main>
+      <MobileNav />
     </div>
   );
 }
