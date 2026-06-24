@@ -72,6 +72,7 @@ const desktopNavLinks = [
   { href: '/feed', label: 'My Feed' },
   { href: '/opportunities', label: 'Opportunities' },
   { href: '/inbox', label: 'Inbox' },
+  { href: '/analytics', label: 'Analytics' },
 ];
 
 export function Navigation({ user }: NavProps) {
