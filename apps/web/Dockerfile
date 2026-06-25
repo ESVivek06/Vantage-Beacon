@@ -6,7 +6,7 @@ FROM base AS deps
 COPY package.json yarn.lock ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --production=false
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
