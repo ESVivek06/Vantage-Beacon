@@ -279,11 +279,40 @@ export default function DashboardPage() {
   const profileCompletion = 50;
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setAnalyticsLoading(false);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, []);
+    fetch('/api/analytics/summary?days=30')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const mkMetric = (
+          label: string,
+          summary: { current: number; deltaPercent: number | null; sparkline: { date: string; value: number }[] },
+          aiPowered?: boolean,
+        ): Metric => ({
+          label,
+          value: summary.current,
+          delta: summary.deltaPercent ?? 0,
+          sparkline: summary.sparkline.map((p: { date: string; value: number }) => p.value),
+          aiPowered,
+          fallback: data.insufficientSample,
+        });
+
+        if (isFounder) {
+          setAnalyticsMetrics([
+            mkMetric('Matches Found', data.matches, true),
+            mkMetric('Connections', data.connections),
+            mkMetric('Messages', data.messages),
+          ]);
+        } else {
+          setAnalyticsMetrics([
+            mkMetric('Matches Made', data.matches, true),
+            mkMetric('Connections', data.connections),
+            mkMetric('Messages Sent', data.messages),
+          ]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAnalyticsLoading(false));
+  }, [isFounder]);
 
   useEffect(() => {
     fetch('/api/user/me')
