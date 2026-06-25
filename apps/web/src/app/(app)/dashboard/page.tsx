@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { ChevronRight, LayoutDashboard, Users, Inbox, TrendingUp } from 'lucide-react';
+import { ChevronRight, LayoutDashboard, Users, Inbox, TrendingUp, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { EscrowDashboardTab } from '@/components/escrow/EscrowDashboardTab';
 
 // Shared
 import { AnalyticsBar } from '@/components/dashboard/AnalyticsBar';
@@ -136,6 +137,11 @@ function FreelancerDashboard({
             ))}
           </div>
         )}
+
+        {/* Payments & Escrow section */}
+        <div className="bg-white rounded-xl border border-neutral-200 shadow-xs p-5">
+          <EscrowDashboardTab viewerRole="counterparty" viewerName={userName} />
+        </div>
       </main>
     </div>
   );
@@ -149,7 +155,7 @@ const FOUNDER_METRICS: Metric[] = [
   { label: 'Investor Reach', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
 ];
 
-type FounderTab = 'pipeline' | 'candidates' | 'investors' | 'activity';
+type FounderTab = 'pipeline' | 'candidates' | 'investors' | 'activity' | 'escrow';
 
 function FounderDashboard({ userName }: { userName: string }) {
   const [activeTab, setActiveTab] = useState<FounderTab>('pipeline');
@@ -163,6 +169,7 @@ function FounderDashboard({ userName }: { userName: string }) {
     { id: 'candidates', label: 'Candidates', icon: Users },
     { id: 'investors', label: 'Investors', icon: TrendingUp },
     { id: 'activity', label: 'Activity', icon: Inbox },
+    { id: 'escrow', label: 'Escrow', icon: Banknote },
   ];
 
   return (
@@ -258,6 +265,16 @@ function FounderDashboard({ userName }: { userName: string }) {
       >
         <h2 className="text-base font-semibold text-neutral-900 mb-4">Recent activity</h2>
         <ActivityFeed initialItems={activityItems} />
+      </section>
+
+      {/* Escrow panel */}
+      <section
+        id="founder-panel-escrow"
+        role="tabpanel"
+        aria-labelledby="tab-escrow"
+        hidden={activeTab !== 'escrow'}
+      >
+        <EscrowDashboardTab viewerRole="founder" viewerName={userName} />
       </section>
     </div>
   );
