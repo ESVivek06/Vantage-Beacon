@@ -5,7 +5,9 @@ RUN apk add --no-cache libc6-compat
 FROM base AS deps
 COPY package.json yarn.lock ./
 COPY apps/web/package.json ./apps/web/
+COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/database/package.json ./packages/database/
 RUN yarn install --frozen-lockfile --production=false
 
 FROM base AS builder
