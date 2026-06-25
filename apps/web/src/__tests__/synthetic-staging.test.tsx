@@ -228,7 +228,8 @@ describe('Flow 5 — Messaging: sendMessage resolver', () => {
     const mod = await import('@/../../apps/api/src/graphql/resolvers/messages').catch(() => null);
     if (!mod) return;
 
-    const fakeCtx = { user: { sub: 'user-1' }, db: {} };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fakeCtx = { user: { sub: 'user-1' }, db: {} } as any;
     await expect(
       mod.messageResolvers.Mutation.sendMessage(
         undefined,

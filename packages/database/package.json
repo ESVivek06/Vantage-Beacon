@@ -12,6 +12,7 @@
     "db:seed": "ts-node --project tsconfig.json prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
+    "build": "echo 'No build step for database package'",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'No lint for database package'",
     "test": "echo 'No tests for database package'"

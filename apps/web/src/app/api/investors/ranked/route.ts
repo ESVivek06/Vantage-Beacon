@@ -64,17 +64,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ investors: [], count: 0, recencyFallback: true });
     }
 
-    const ranked: RankedInvestor[] = investors.map((investor: {
-      id: string;
-      region?: string;
-      profile?: { displayName?: string; skills?: string[]; tags?: string[] };
-      madeInvestments: Array<{
-        stage?: string;
-        status?: string;
-        createdAt: Date;
-        project?: { requiredSkills?: string[]; budget?: { domain?: string } | null };
-      }>;
-    }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ranked: RankedInvestor[] = (investors as any[]).map((investor) => {
       const investments = investor.madeInvestments ?? [];
       const latestInvestment = investments[0];
       const stage = latestInvestment?.stage ?? null;

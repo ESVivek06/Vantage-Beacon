@@ -65,13 +65,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const userMap = new Map(targetUsers.map((u: { id: string }) => [u.id, u]));
 
-    const result: MatchScoreItem[] = matches.map((m: {
-      id: string;
-      targetId: string;
-      score: number;
-      matchedAt: Date;
-      explainability: Record<string, unknown>;
-    }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: MatchScoreItem[] = (matches as any[]).map((m) => {
       const target = userMap.get(m.targetId) as {
         role?: string;
         region?: string;
