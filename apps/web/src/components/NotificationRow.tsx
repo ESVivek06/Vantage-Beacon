@@ -1,6 +1,6 @@
 'use client';
 
-import { Handshake, MessageSquare, UserPlus, AlertCircle } from 'lucide-react';
+import { Handshake, MessageSquare, UserPlus, AlertCircle, Camera } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn, formatRelative } from '@/lib/utils';
 import type { MockNotification } from '@/lib/messaging-mock-data';
@@ -52,6 +52,38 @@ const TYPE_CONFIG = {
     borderColor: 'border-l-accent-600',
     label: 'System Alert',
     cta: 'Complete profile →',
+  },
+  moderation_approved: {
+    Icon: Camera,
+    iconBg: 'bg-success-100',
+    iconText: 'text-success-600',
+    borderColor: 'border-l-success-600',
+    label: 'Photo Approved',
+    cta: 'View profile →',
+  },
+  moderation_rejected: {
+    Icon: Camera,
+    iconBg: 'bg-error-100',
+    iconText: 'text-error-600',
+    borderColor: 'border-l-error-500',
+    label: 'Photo Rejected',
+    cta: 'Appeal decision →',
+  },
+  moderation_pending: {
+    Icon: Camera,
+    iconBg: 'bg-warning-100',
+    iconText: 'text-warning-700',
+    borderColor: 'border-l-warning-500',
+    label: 'Photo Under Review',
+    cta: null,
+  },
+  moderation_appeal_resolved: {
+    Icon: Camera,
+    iconBg: 'bg-primary-100',
+    iconText: 'text-primary-600',
+    borderColor: 'border-l-primary-500',
+    label: 'Appeal Resolved',
+    cta: 'View profile →',
   },
 } as const;
 

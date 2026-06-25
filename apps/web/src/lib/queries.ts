@@ -276,3 +276,97 @@ export const MARK_MESSAGES_READ_MUTATION = gql`
     markMessagesRead(fromUserId: $fromUserId)
   }
 `;
+
+export const PHOTO_MODERATION_STATUS_QUERY = gql`
+  query PhotoModerationStatus {
+    photoModerationStatus {
+      status
+      referenceId
+      updatedAt
+    }
+  }
+`;
+
+export const SUBMIT_APPEAL_MUTATION = gql`
+  mutation SubmitModerationAppeal($input: SubmitAppealInput!) {
+    submitModerationAppeal(input: $input) {
+      referenceId
+      submittedAt
+    }
+  }
+`;
+
+export const ADMIN_MODERATION_QUEUE_QUERY = gql`
+  query AdminModerationQueue($status: ModerationQueueStatus, $limit: Int, $offset: Int) {
+    adminModerationQueue(status: $status, limit: $limit, offset: $offset) {
+      total
+      items {
+        id
+        userId
+        photoKey
+        photoUrl
+        status
+        source
+        rekognitionScore
+        detectionLabels {
+          name
+          confidence
+          category
+        }
+        submittedAt
+        appeal {
+          id
+          reason
+          submittedAt
+          status
+        }
+        user {
+          id
+          email
+          profile {
+            displayName
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const ADMIN_APPROVE_PHOTO_MUTATION = gql`
+  mutation AdminApprovePhoto($photoId: ID!) {
+    adminApprovePhoto(photoId: $photoId) {
+      id
+      status
+    }
+  }
+`;
+
+export const ADMIN_REJECT_PHOTO_MUTATION = gql`
+  mutation AdminRejectPhoto($photoId: ID!, $reason: String) {
+    adminRejectPhoto(photoId: $photoId, reason: $reason) {
+      id
+      status
+    }
+  }
+`;
+
+export const ADMIN_RESOLVE_APPEAL_MUTATION = gql`
+  mutation AdminResolveAppeal($appealId: ID!, $decision: AppealDecision!, $note: String) {
+    adminResolveAppeal(appealId: $appealId, decision: $decision, note: $note) {
+      id
+      status
+    }
+  }
+`;
+
+export const ADMIN_MODERATION_STATS_QUERY = gql`
+  query AdminModerationStats {
+    adminModerationStats {
+      pendingCount
+      approvedToday
+      rejectedToday
+      pendingAppeals
+      avgProcessingTimeMs
+    }
+  }
+`;

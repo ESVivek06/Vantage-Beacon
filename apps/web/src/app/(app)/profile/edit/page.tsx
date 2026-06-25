@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Upload, X, Plus, ChevronDown } from 'lucide-react';
+import { X, Plus, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,12 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/graphql';
-import { ME_QUERY, UPDATE_PROFILE_MUTATION, REQUEST_PHOTO_UPLOAD_MUTATION } from '@/lib/queries';
+import { ME_QUERY, UPDATE_PROFILE_MUTATION, REQUEST_PHOTO_UPLOAD_MUTATION, SUBMIT_APPEAL_MUTATION, PHOTO_MODERATION_STATUS_QUERY } from '@/lib/queries';
 import { initials } from '@/lib/utils';
 import { parseTagMeta, plainTags } from '@/types/profile';
 import type { UserRole } from '@/types/profile';
+import { PhotoUploadDropzone } from '@/components/PhotoUploadDropzone';
+import type { UploadModerationState } from '@/components/PhotoUploadDropzone';
 
 interface MeData {
   me: {
@@ -385,9 +387,9 @@ export default function EditProfilePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [photoModerationStatus, setPhotoModerationStatus] = useState<UploadModerationState>('idle');
+  const [photoReferenceId, setPhotoReferenceId] = useState('');
   const [role, setRole] = useState<UserRole>('freelancer');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     displayName: '',
@@ -413,6 +415,17 @@ export default function EditProfilePage() {
         const profile = me?.profile;
         setPhotoUrl(me?.photoUrl ?? '');
         setRole((me?.role as UserRole) ?? 'freelancer');
+        try {
+          const statusData = await client.request<{
+            photoModerationStatus: { status: string; referenceId?: string } | null;
+          }>(PHOTO_MODERATION_STATUS_QUERY);
+          if (statusData.photoModerationStatus) {
+            setPhotoModerationStatus(statusData.photoModerationStatus.status as UploadModerationState);
+            setPhotoReferenceId(statusData.photoModerationStatus.referenceId ?? '');
+          }
+        } catch {
+          // non-blocking
+        }
         if (profile) {
           const parsedMeta = parseTagMeta(profile.tags ?? []);
           const plain = plainTags(profile.tags ?? []);
@@ -442,7 +455,7 @@ export default function EditProfilePage() {
   }
 
   async function handlePhotoUpload(file: File) {
-    setUploading(true);
+    setPhotoModerationStatus('uploading');
     try {
       const client = createClient();
       const { requestProfilePhotoUpload } = await client.request<{
@@ -460,11 +473,36 @@ export default function EditProfilePage() {
       });
 
       setPhotoUrl(URL.createObjectURL(file));
+      setPhotoModerationStatus('processing');
+      // Poll for moderation status after 5s
+      setTimeout(async () => {
+        try {
+          const statusData = await client.request<{
+            photoModerationStatus: { status: string; referenceId?: string } | null;
+          }>(PHOTO_MODERATION_STATUS_QUERY);
+          if (statusData.photoModerationStatus) {
+            setPhotoModerationStatus(statusData.photoModerationStatus.status as UploadModerationState);
+            setPhotoReferenceId(statusData.photoModerationStatus.referenceId ?? '');
+          }
+        } catch {
+          // leave as processing
+        }
+      }, 5000);
     } catch {
+      setPhotoModerationStatus('error');
       setError('Photo upload failed. Please try again.');
-    } finally {
-      setUploading(false);
     }
+  }
+
+  async function handleAppeal(reason: string): Promise<{ referenceId: string }> {
+    const client = createClient();
+    const result = await client.request<{
+      submitModerationAppeal: { referenceId: string };
+    }>(SUBMIT_APPEAL_MUTATION, { input: { reason } });
+    const refId = result.submitModerationAppeal.referenceId;
+    setPhotoModerationStatus('appealing' as UploadModerationState);
+    setPhotoReferenceId(refId);
+    return { referenceId: refId };
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -510,36 +548,13 @@ export default function EditProfilePage() {
         <Card>
           <CardHeader><CardTitle>Profile Photo</CardTitle></CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                {photoUrl && <AvatarImage src={photoUrl} alt={displayName} />}
-                <AvatarFallback className="text-2xl">{initials(displayName)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handlePhotoUpload(file);
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={uploading}
-                  onClick={() => fileRef.current?.click()}
-                  className="gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  {uploading ? 'Uploading…' : 'Upload Photo'}
-                </Button>
-                <p className="text-xs text-neutral-500 mt-1">JPG, PNG up to 5MB</p>
-              </div>
-            </div>
+            <PhotoUploadDropzone
+              currentPhotoUrl={photoUrl}
+              moderationStatus={photoModerationStatus}
+              referenceId={photoReferenceId}
+              onFileSelect={handlePhotoUpload}
+              onAppeal={handleAppeal}
+            />
           </CardContent>
         </Card>
 
