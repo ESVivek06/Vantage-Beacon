@@ -44,7 +44,7 @@ export async function updateProfile(
 
   const hasUserDataUpdate = input.profileData !== undefined || input.photoKey !== undefined;
 
-  return db.$transaction(async (tx) => {
+  return db.$transaction(async (tx: any) => {
     const profile = await tx.profile.update({
       where: { userId },
       data: profileUpdateData,

@@ -13,7 +13,7 @@ export const hardDeleteWorker = new Worker<HardDeleteJobData>(
     const { gdprRequestId, userId, region } = job.data;
     const db = getClientForRegion(region as Region);
 
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       // Null out all PII fields on the user row
       await (tx as any).user.update({
         where: { id: userId },
