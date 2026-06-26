@@ -63,7 +63,7 @@ function MatchScoreArc({ score = 75 }: { score?: number }) {
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <span
-          style={{ fontSize: 18, fontWeight: 800, color: '#4F46E5', lineHeight: 1 }}
+          className="text-lg font-extrabold text-primary-600 leading-none"
           aria-hidden="true"
         >
           {score}

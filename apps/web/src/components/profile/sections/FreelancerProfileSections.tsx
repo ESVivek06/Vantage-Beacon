@@ -61,7 +61,7 @@ function RateCard({ meta }: { meta: Record<string, string> }) {
   const engagements = ['Contract work', 'Freelance project', 'Advisory'];
 
   return (
-    <section className="bg-neutral-0 rounded-xl shadow-sm p-5 sticky top-20">
+    <section className="bg-neutral-0 rounded-xl shadow-sm p-5 max-sm:static sm:sticky sm:top-20">
       <h2 className="text-sm font-semibold text-neutral-900 mb-4">Engagement Details</h2>
       <div className="space-y-2 mb-4">
         {dayRate && (

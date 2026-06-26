@@ -75,7 +75,7 @@ export default function OnboardingWelcomePage() {
           Welcome to V.B — let's confirm who you are
         </h1>
         <p className="text-lg text-neutral-500 text-center mb-8 md:text-left">
-          You registered as a Freelancer. Confirm or change below.
+          Choose your primary role — you can always change it later.
         </p>
 
         {/* Role selector */}
