@@ -17,6 +17,8 @@ RUN yarn install --frozen-lockfile --production=false
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN yarn workspace @vb/database db:generate
+RUN yarn workspace @vb/database build
 RUN yarn workspace @vb/shared build
 RUN yarn workspace @vb/web build
 
