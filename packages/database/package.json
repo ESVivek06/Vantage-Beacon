@@ -2,7 +2,8 @@
   "name": "@vb/database",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "scripts": {
     "db:generate": "prisma generate && prisma generate --schema prisma/schema.global.prisma",
     "db:migrate:dev": "prisma migrate dev",
@@ -12,7 +13,7 @@
     "db:seed": "ts-node --project tsconfig.json prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
-    "build": "echo 'No build step for database package'",
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'No lint for database package'",
     "test": "echo 'No tests for database package'"
