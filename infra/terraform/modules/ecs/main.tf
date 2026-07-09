@@ -170,7 +170,9 @@ resource "aws_lb_target_group" "services" {
   }
 }
 
+# HTTP → HTTPS redirect when TLS cert is configured
 resource "aws_lb_listener" "http" {
+  count             = var.certificate_arn != "" ? 1 : 0
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
@@ -182,6 +184,35 @@ resource "aws_lb_listener" "http" {
       protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
+  }
+}
+
+# HTTP forward to API when no TLS cert (e.g. staging without ACM cert)
+resource "aws_lb_listener" "http_plain" {
+  count             = var.certificate_arn == "" ? 1 : 0
+  load_balancer_arn = aws_lb.this.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.services["api"].arn
+  }
+}
+
+# HTTP listener rule: app.*/www.* → web service (plain-HTTP mode, no cert)
+resource "aws_lb_listener_rule" "web_plain" {
+  count        = var.certificate_arn == "" ? 1 : 0
+  listener_arn = aws_lb_listener.http_plain[0].arn
+  priority     = 100
+
+  condition {
+    host_header { values = ["app.*", "www.*"] }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.services["web"].arn
   }
 }
 
@@ -331,7 +362,7 @@ resource "aws_ecs_service" "services" {
     ignore_changes = [desired_count, task_definition]
   }
 
-  depends_on = [aws_lb_listener.http]
+  depends_on = [aws_lb_listener.http, aws_lb_listener.http_plain]
 }
 
 output "cluster_name"  { value = aws_ecs_cluster.this.name }

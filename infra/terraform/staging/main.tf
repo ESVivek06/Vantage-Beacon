@@ -305,7 +305,45 @@ module "ecs" {
   depends_on = [module.rds, module.s3]
 }
 
+# ── DNS ──────────────────────────────────────────────────────────────────────
+variable "hosted_zone_name" {
+  type    = string
+  default = "vb.com"
+}
+
+data "aws_route53_zone" "main" {
+  name         = var.hosted_zone_name
+  private_zone = false
+}
+
+# api.staging.vb.com → ALB (API target group is ALB default)
+resource "aws_route53_record" "api_staging" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "api.staging.${var.hosted_zone_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.ecs.alb_dns_name
+    zone_id                = module.ecs.alb_zone_id
+    evaluate_target_health = true
+  }
+}
+
+# app.staging.vb.com → ALB (listener rule routes app.* to web service)
+resource "aws_route53_record" "app_staging" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "app.staging.${var.hosted_zone_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.ecs.alb_dns_name
+    zone_id                = module.ecs.alb_zone_id
+    evaluate_target_health = true
+  }
+}
+
 output "alb_dns"        { value = module.ecs.alb_dns_name }
+output "alb_zone_id"    { value = module.ecs.alb_zone_id }
 output "ml_service_url" { value = "http://${module.ecs.alb_dns_name}:8000" }
 output "ecr_urls"       { value = module.ecr.repository_urls }
 output "rds_endpoint"   { value = module.rds.endpoint; sensitive = true }
