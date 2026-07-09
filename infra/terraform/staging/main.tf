@@ -19,25 +19,82 @@ provider "aws" {
 }
 
 variable "environment" { default = "staging" }
-variable "db_password" { type = string; sensitive = true }
-variable "db_username" { type = string; default = "vbadmin" }
-variable "jwt_secret"  { type = string; sensitive = true }
-variable "nextauth_secret" { type = string; sensitive = true }
-variable "auth_secret"     { type = string; sensitive = true }
-variable "upstash_redis_url"         { type = string; sensitive = true }
-variable "upstash_redis_rest_url"    { type = string; sensitive = true }
-variable "upstash_redis_rest_token"  { type = string; sensitive = true }
-variable "openai_api_key"            { type = string; sensitive = true }
-variable "datadog_api_key"           { type = string; sensitive = true }
-variable "unsubscribe_secret"        { type = string; sensitive = true }
-variable "google_client_id"          { type = string; sensitive = true }
-variable "google_client_secret"      { type = string; sensitive = true }
-variable "linkedin_client_id"        { type = string; sensitive = true }
-variable "linkedin_client_secret"    { type = string; sensitive = true }
-variable "ses_from_address"    { type = string; default = "noreply@staging.vb.com" }
-variable "app_url"             { type = string; default = "https://app.staging.vb.com" }
-variable "ml_service_url"      { type = string; default = "" }
-variable "acm_cert_arn"        { type = string; default = "" }
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+variable "db_username" {
+  type    = string
+  default = "vbadmin"
+}
+variable "jwt_secret" {
+  type      = string
+  sensitive = true
+}
+variable "nextauth_secret" {
+  type      = string
+  sensitive = true
+}
+variable "auth_secret" {
+  type      = string
+  sensitive = true
+}
+variable "upstash_redis_url" {
+  type      = string
+  sensitive = true
+}
+variable "upstash_redis_rest_url" {
+  type      = string
+  sensitive = true
+}
+variable "upstash_redis_rest_token" {
+  type      = string
+  sensitive = true
+}
+variable "openai_api_key" {
+  type      = string
+  sensitive = true
+}
+variable "datadog_api_key" {
+  type      = string
+  sensitive = true
+}
+variable "unsubscribe_secret" {
+  type      = string
+  sensitive = true
+}
+variable "google_client_id" {
+  type      = string
+  sensitive = true
+}
+variable "google_client_secret" {
+  type      = string
+  sensitive = true
+}
+variable "linkedin_client_id" {
+  type      = string
+  sensitive = true
+}
+variable "linkedin_client_secret" {
+  type      = string
+  sensitive = true
+}
+variable "ses_from_address" {
+  type    = string
+  default = "noreply@staging.vb.com"
+}
+variable "app_url" {
+  type    = string
+  default = "https://app.staging.vb.com"
+}
+variable "ml_service_url" {
+  type    = string
+  default = ""
+}
+variable "acm_cert_arn" {
+  type    = string
+  default = ""
+}
 
 locals {
   project = "vb"
@@ -346,5 +403,8 @@ output "alb_dns"        { value = module.ecs.alb_dns_name }
 output "alb_zone_id"    { value = module.ecs.alb_zone_id }
 output "ml_service_url" { value = "http://${module.ecs.alb_dns_name}:8000" }
 output "ecr_urls"       { value = module.ecr.repository_urls }
-output "rds_endpoint"   { value = module.rds.endpoint; sensitive = true }
+output "rds_endpoint" {
+  value     = module.rds.endpoint
+  sensitive = true
+}
 output "s3_images"      { value = module.s3.profile_images_bucket }
