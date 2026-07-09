@@ -7,7 +7,10 @@ variable "instance_class"    { default = "db.t3.medium" }
 variable "multi_az"          { default = false }
 variable "db_name"           { default = "vb" }
 variable "db_username"       { default = "vbadmin" }
-variable "db_password"       { type = string; sensitive = true }
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
 variable "allocated_storage" { default = 50 }
 
 locals {

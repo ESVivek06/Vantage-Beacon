@@ -8,7 +8,10 @@ variable "sg_alb_id"            { type = string }
 variable "sg_ecs_id"            { type = string }
 variable "aws_region"           { type = string }
 variable "datadog_api_key_arn"  { type = string }
-variable "certificate_arn"      { type = string; default = "" }
+variable "certificate_arn" {
+  type    = string
+  default = ""
+}
 
 variable "services" {
   description = "Map of service name → {image, port, cpu, memory, env_vars, secrets}"
