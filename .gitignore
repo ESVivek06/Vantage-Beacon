@@ -8,4 +8,5 @@ dist/
 .terraform/
 *.tfstate
 *.tfstate.backup
+*.tfvars
 coverage/

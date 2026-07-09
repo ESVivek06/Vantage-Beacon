@@ -7,7 +7,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "vb-terraform-state"
+    bucket = "vb-tf-state-345307375390"
     key    = "staging/terraform.tfstate"
     region = "us-east-1"
   }

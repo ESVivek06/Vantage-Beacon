@@ -1,0 +1,45 @@
+# infra/terraform/staging/staging.tfvars.example
+#
+# Copy to staging.tfvars and fill in all values before running terraform apply.
+# Never commit staging.tfvars — it contains secrets.
+#
+# Required GitHub Actions secrets (TF_STAGING_* prefix):
+#   TF_STAGING_DB_PASSWORD, TF_STAGING_JWT_SECRET, TF_STAGING_NEXTAUTH_SECRET,
+#   TF_STAGING_AUTH_SECRET, TF_STAGING_UPSTASH_REDIS_URL,
+#   TF_STAGING_UPSTASH_REDIS_REST_URL, TF_STAGING_UPSTASH_REDIS_REST_TOKEN,
+#   TF_STAGING_OPENAI_API_KEY, TF_STAGING_DATADOG_API_KEY,
+#   TF_STAGING_UNSUBSCRIBE_SECRET, TF_STAGING_GOOGLE_CLIENT_ID,
+#   TF_STAGING_GOOGLE_CLIENT_SECRET, TF_STAGING_LINKEDIN_CLIENT_ID,
+#   TF_STAGING_LINKEDIN_CLIENT_SECRET, TF_STAGING_ACM_CERT_ARN
+
+# ── Database ──────────────────────────────────────────────────────────────────
+db_password = "CHANGE_ME_strong_password_here"
+db_username = "vbadmin"
+
+# ── Auth / JWT ────────────────────────────────────────────────────────────────
+jwt_secret      = "CHANGE_ME_32+char_random_string"
+nextauth_secret = "CHANGE_ME_32+char_random_string"
+auth_secret     = "CHANGE_ME_32+char_random_string"
+
+# ── Upstash Redis ─────────────────────────────────────────────────────────────
+upstash_redis_url        = "rediss://:TOKEN@HOSTNAME:PORT"
+upstash_redis_rest_url   = "https://HOSTNAME.upstash.io"
+upstash_redis_rest_token = "CHANGE_ME_upstash_token"
+
+# ── Third-party APIs ──────────────────────────────────────────────────────────
+openai_api_key   = "sk-CHANGE_ME"
+datadog_api_key  = "CHANGE_ME_datadog_key"
+
+# ── Secrets / Auth providers ──────────────────────────────────────────────────
+unsubscribe_secret    = "CHANGE_ME_32+char_random_string"
+google_client_id      = "CHANGE_ME.apps.googleusercontent.com"
+google_client_secret  = "CHANGE_ME_google_secret"
+linkedin_client_id    = "CHANGE_ME_linkedin_client_id"
+linkedin_client_secret = "CHANGE_ME_linkedin_secret"
+
+# ── Optional overrides (defaults shown) ───────────────────────────────────────
+# ses_from_address = "noreply@staging.vb.com"
+# app_url          = "https://app.staging.vb.com"
+# ml_service_url   = ""
+# acm_cert_arn     = ""        # Leave empty for HTTP-only staging
+# hosted_zone_name = "vb.com"
