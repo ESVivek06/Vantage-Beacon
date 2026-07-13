@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,18 @@ const NAV_LINKS = [
 
 export function MarketingNav() {
   const [open, setOpen] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
+
+  useEffect(() => {
+    const hero = document.getElementById('hero');
+    if (!hero) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-200 bg-neutral-0 shadow-sm">
@@ -36,9 +48,19 @@ export function MarketingNav() {
           <Button variant="secondary" size="sm" asChild>
             <Link href="/auth/sign-in">Sign in</Link>
           </Button>
-          <Button variant="primary" size="md" asChild>
-            <Link href="/join/role">Get early access</Link>
-          </Button>
+          {heroVisible ? (
+            <Button variant="primary" size="md" asChild>
+              <Link href="/join/role">Get early access</Link>
+            </Button>
+          ) : (
+            <Button
+              size="md"
+              asChild
+              className="bg-accent-500 text-neutral-900 hover:bg-accent-400 focus-visible:ring-accent-500"
+            >
+              <Link href="/join/role">Join Waitlist</Link>
+            </Button>
+          )}
         </div>
         <button
           className="flex h-10 w-10 items-center justify-center rounded-md text-neutral-700 hover:bg-neutral-100 md:hidden"
@@ -75,9 +97,19 @@ export function MarketingNav() {
               <Button variant="secondary" size="lg" className="w-full" asChild>
                 <Link href="/auth/sign-in">Sign in</Link>
               </Button>
-              <Button variant="primary" size="lg" className="w-full" asChild>
-                <Link href="/join/role">Get early access</Link>
-              </Button>
+              {heroVisible ? (
+                <Button variant="primary" size="lg" className="w-full" asChild>
+                  <Link href="/join/role">Get early access</Link>
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="w-full bg-accent-500 text-neutral-900 hover:bg-accent-400 focus-visible:ring-accent-500"
+                  asChild
+                >
+                  <Link href="/join/role">Join Waitlist</Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

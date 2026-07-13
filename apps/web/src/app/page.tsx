@@ -11,6 +11,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section
+        id="hero"
         className="relative overflow-hidden py-32 md:py-[128px]"
         style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #3730A3 60%, #0F766E 100%)' }}
       >
@@ -34,7 +35,7 @@ export default function LandingPage() {
               asChild
               className="w-full bg-accent-500 text-neutral-900 shadow-md hover:bg-accent-400 sm:w-auto"
             >
-              <Link href="/join/role">Get early access <ArrowRight className="ml-1 h-5 w-5" /></Link>
+              <Link href="/join/role">Request Early Access <ArrowRight className="ml-1 h-5 w-5" /></Link>
             </Button>
             <Button
               size="xl"
