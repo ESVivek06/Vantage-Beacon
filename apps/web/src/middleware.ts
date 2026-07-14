@@ -10,7 +10,7 @@ const API_AUTH_PREFIX = '/api/auth';
 // Routes that are always public
 const PUBLIC_PATHS = new Set(['/', '/about', '/auth/sign-in', '/auth/sign-up', '/auth/error', '/offline']);
 // Public path prefixes (all sub-routes are public without authentication)
-const PUBLIC_PREFIXES = ['/join/', '/invite/', '/api/join'];
+const PUBLIC_PREFIXES = ['/join/', '/invite/', '/api/join', '/banners/'];
 // Static asset patterns handled before the matcher, but guard here too
 const STATIC_PREFIXES = ['/_next/', '/favicon.ico'];
 
