@@ -30,21 +30,50 @@ import { InvestorItem } from '@/components/dashboard/founder/InvestorItem';
 import type { InvestorItemProps } from '@/components/dashboard/founder/InvestorItem';
 import { ActivityFeed } from '@/components/dashboard/founder/ActivityFeed';
 import type { ActivityItem } from '@/components/dashboard/founder/ActivityFeed';
+import type { MatchScoreItem } from '@/app/api/matches/route';
+
+// ─── Skeleton helpers ─────────────────────────────────────────────────────────
+
+function MatchCardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-xs p-5 animate-pulse">
+      <div className="flex items-start gap-4">
+        <div className="h-12 w-12 rounded-full bg-neutral-200 shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-1/2 rounded bg-neutral-200" />
+          <div className="h-3 w-1/3 rounded bg-neutral-100" />
+        </div>
+        <div className="h-12 w-12 rounded-full bg-neutral-100" />
+      </div>
+      <div className="mt-4 space-y-1.5">
+        <div className="h-3 w-full rounded bg-neutral-100" />
+        <div className="h-3 w-3/4 rounded bg-neutral-100" />
+      </div>
+    </div>
+  );
+}
 
 // ─── Freelancer Dashboard ──────────────────────────────────────────────────────
 
-const FREELANCER_METRICS: Metric[] = [
-  { label: 'Matches Made', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
-  { label: 'Profile Views', value: '—', delta: 0, sparkline: [], fallback: true },
-  { label: 'Messages Sent', value: '—', delta: 0, sparkline: [], fallback: true },
-];
-
 const MATCH_TABS = [
   { id: 'all', label: 'All matches' },
-  { id: 'new', label: 'New', count: 0 },
+  { id: 'new', label: 'New' },
   { id: 'liked', label: 'Liked' },
   { id: 'passed', label: 'Passed' },
 ];
+
+function mapApiMatchToCard(m: MatchScoreItem): MatchCardProps {
+  return {
+    id: m.matchId,
+    name: m.target.displayName ?? 'Unknown',
+    role: m.target.role ?? 'member',
+    location: m.target.region ?? undefined,
+    skills: m.target.skills,
+    matchingSkills: m.explainability.skillOverlap,
+    matchReasons: m.explainability.topReasons,
+    matchScore: Math.round(m.score * 100),
+  };
+}
 
 function FreelancerDashboard({
   userName,
@@ -57,7 +86,25 @@ function FreelancerDashboard({
 }) {
   const [activeTab, setActiveTab] = useState('all');
   const [inboxItems] = useState<InboxItemProps[]>([]);
-  const [matches] = useState<MatchCardProps[]>([]);
+  const [matches, setMatches] = useState<MatchCardProps[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/matches?limit=10')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { matches?: MatchScoreItem[] } | null) => {
+        if (data?.matches) setMatches(data.matches.map(mapApiMatchToCard));
+      })
+      .catch(() => {})
+      .finally(() => setMatchesLoading(false));
+  }, []);
+
+  const filteredMatches = (() => {
+    if (activeTab === 'new') return matches.filter((m) => (m.matchScore ?? 0) >= 80);
+    if (activeTab === 'liked') return [];
+    if (activeTab === 'passed') return [];
+    return matches;
+  })();
 
   return (
     <div className="flex gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -115,7 +162,7 @@ function FreelancerDashboard({
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-neutral-900">Your matches</h2>
-            <Link href="/feed" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
+            <Link href="/discover" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
               See all <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -123,16 +170,21 @@ function FreelancerDashboard({
         </div>
 
         {/* Match cards grid */}
-        {matches.length === 0 ? (
+        {matchesLoading ? (
+          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+            <MatchCardSkeleton />
+            <MatchCardSkeleton />
+          </div>
+        ) : filteredMatches.length === 0 ? (
           <div className="bg-white rounded-xl border border-neutral-200 shadow-xs p-10 text-center">
             <p className="text-sm text-neutral-500 mb-2">No matches yet for &ldquo;{activeTab}&rdquo;</p>
-            <Link href="/feed">
-              <Button variant="primary" size="sm">Browse feed</Button>
+            <Link href="/discover">
+              <Button variant="primary" size="sm">Discover people</Button>
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-            {matches.map((m) => (
+            {filteredMatches.map((m) => (
               <MatchCard key={m.id} {...m} />
             ))}
           </div>
@@ -148,12 +200,6 @@ function FreelancerDashboard({
 }
 
 // ─── Founder Dashboard ────────────────────────────────────────────────────────
-
-const FOUNDER_METRICS: Metric[] = [
-  { label: 'Matches Found', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
-  { label: 'Profile Views', value: '—', delta: 0, sparkline: [], fallback: true },
-  { label: 'Investor Reach', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
-];
 
 type FounderTab = 'pipeline' | 'candidates' | 'investors' | 'activity' | 'escrow';
 
@@ -221,14 +267,14 @@ function FounderDashboard({ userName }: { userName: string }) {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-neutral-900">Top candidates</h2>
-          <Link href="/feed" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
+          <Link href="/discover" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
             See all <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         {candidates.length === 0 ? (
           <div className="bg-white rounded-xl border border-neutral-200 shadow-xs p-10 text-center">
             <p className="text-sm text-neutral-500 mb-2">No candidate matches yet.</p>
-            <Link href="/feed"><Button variant="primary" size="sm">Find candidates</Button></Link>
+            <Link href="/discover"><Button variant="primary" size="sm">Find candidates</Button></Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
@@ -292,8 +338,7 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsMetrics, setAnalyticsMetrics] = useState<Metric[] | undefined>(undefined);
   const [userAvailable, setUserAvailable] = useState<boolean | undefined>(undefined);
-
-  const profileCompletion = 50;
+  const [profileCompletion, setProfileCompletion] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -305,7 +350,10 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch('/api/user/me')
       .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.available !== undefined) setUserAvailable(data.available); })
+      .then((data: { available?: boolean; profileCompletion?: number } | null) => {
+        if (data?.available !== undefined) setUserAvailable(data.available);
+        if (data?.profileCompletion !== undefined) setProfileCompletion(data.profileCompletion);
+      })
       .catch(() => {});
   }, []);
 

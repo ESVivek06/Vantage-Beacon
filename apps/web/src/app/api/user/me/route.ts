@@ -6,6 +6,22 @@ import { getClient, UserRole } from '@vb/database';
 const VALID_ROLES = new Set<string>(Object.values(UserRole));
 const AVAILABILITY_TAGS = new Set<string>(['open', 'busy']);
 
+function computeProfileCompletion(user: {
+  name?: string | null;
+  image?: string | null;
+  profile?: { bio?: string | null; skills?: string[]; tags?: string[] } | null;
+}): number {
+  const checks = [
+    !!user.name,
+    !!user.image,
+    !!user.profile?.bio,
+    (user.profile?.skills?.length ?? 0) > 0,
+    (user.profile?.tags?.length ?? 0) > 0,
+  ];
+  const filled = checks.filter(Boolean).length;
+  return Math.round((filled / checks.length) * 100);
+}
+
 export async function GET(): Promise<NextResponse> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -13,13 +29,18 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const db = getClient();
-  const profile = await db.profile.findUnique({
-    where: { userId: session.user.id },
-    select: { tags: true },
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      name: true,
+      image: true,
+      profile: { select: { bio: true, skills: true, tags: true } },
+    },
   });
 
-  const tags: string[] = profile?.tags ?? [];
-  return NextResponse.json({ available: tags.includes('open') });
+  const tags: string[] = user?.profile?.tags ?? [];
+  const profileCompletion = computeProfileCompletion(user ?? {});
+  return NextResponse.json({ available: tags.includes('open'), profileCompletion });
 }
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
