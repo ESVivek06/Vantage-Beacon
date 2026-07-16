@@ -34,6 +34,8 @@ router.post('/', async (req: Request, res: Response) => {
       'freelancer_to_project',
       'founder_to_investor',
       'user_to_user',
+      'supplier_to_founder',
+      'stakeholder_to_project',
     ];
     if (!validMatchTypes.includes(matchType)) {
       return res.status(400).json({ error: `matchType must be one of: ${validMatchTypes.join(', ')}` });

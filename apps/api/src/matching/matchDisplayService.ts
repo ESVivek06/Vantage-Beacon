@@ -62,6 +62,8 @@ export function deriveRolePair(
     if (targetRole === 'investor') return 'founder_investor';
   }
   if (callerRole === 'investor' && targetType === 'user' && targetRole === 'founder') return 'investor';
+  if (callerRole === 'supplier') return 'supplier';
+  if (callerRole === 'stakeholder') return 'stakeholder';
   return 'generic';
 }
 
@@ -149,6 +151,40 @@ export function buildAiRationale(
         : skillOverlap.length > 0
           ? `Their domain expertise includes ${skillOverlap.slice(0, 2).join(' and ')}.`
           : 'Their stage and sector align with your investment thesis.';
+      rationale = `${name} — ${alignReason.toLowerCase()}. ${context}`;
+      break;
+    }
+
+    case 'supplier': {
+      // Supplier viewing a project that needs their supply/expertise
+      const topSkills = skillOverlap.slice(0, 2);
+      const skillText =
+        topSkills.length > 0
+          ? `is seeking ${topSkills.join(' and ')}`
+          : 'aligns with your supply offering';
+      const contextReason = topReasons.find((r) => !r.toLowerCase().includes('skill')) ?? null;
+      const context = contextReason
+        ? `${contextReason.charAt(0).toUpperCase() + contextReason.slice(1)}.`
+        : regionMatch && region
+          ? `The project is based in the ${region} region.`
+          : 'Your supply profile closely matches what this project requires.';
+      rationale = `This project ${skillText}. ${context}`;
+      break;
+    }
+
+    case 'stakeholder': {
+      // Stakeholder viewing an open project
+      const alignReason =
+        topReasons.find((r) =>
+          r.toLowerCase().includes('align') || r.toLowerCase().includes('match') || r.toLowerCase().includes('semantic'),
+        ) ?? topReasons[0] ?? 'strong alignment with your focus areas';
+      const secondReason =
+        topReasons.find((r) => r !== alignReason) ?? null;
+      const context = secondReason
+        ? `${secondReason.charAt(0).toUpperCase() + secondReason.slice(1)}.`
+        : regionMatch && region
+          ? `The project is active in the ${region} region.`
+          : 'This project aligns with your stakeholder interests and focus area.';
       rationale = `${name} — ${alignReason.toLowerCase()}. ${context}`;
       break;
     }
@@ -255,7 +291,7 @@ export function buildMatchDisplayResult(
   const aiRationale = buildAiRationale(rolePair, result.explanation, result.metadata);
 
   const isInvestorView = rolePair === 'investor';
-  const isFreelancerOrFounderView = rolePair === 'freelancer' || rolePair === 'founder_freelancer';
+  const isFreelancerOrFounderView = rolePair === 'freelancer' || rolePair === 'founder_freelancer' || rolePair === 'supplier';
 
   const tractionSignals: TractionSignal[] | null = isInvestorView
     ? buildTractionSignals(

@@ -1,4 +1,4 @@
-export type MatchType = 'freelancer_to_project' | 'founder_to_investor' | 'user_to_user';
+export type MatchType = 'freelancer_to_project' | 'founder_to_investor' | 'user_to_user' | 'supplier_to_founder' | 'stakeholder_to_project';
 export type Region = 'UK' | 'IN' | 'NA';
 
 export interface MatchFilter {
@@ -88,4 +88,6 @@ export type RolePair =
   | 'founder_freelancer'   // founder seeing a freelancer candidate
   | 'founder_investor'     // founder seeing an investor
   | 'investor'             // investor seeing a startup
+  | 'supplier'             // supplier seeing a project that needs supply
+  | 'stakeholder'          // stakeholder seeing an open project
   | 'generic';             // fallback

@@ -19,8 +19,19 @@ _SKILL_OVERLAP_PER_SKILL = 0.02
 _MAX_SKILL_BOOST = 0.15
 
 
+def _resolve_target_type(req: FindMatchesRequest) -> FindMatchesRequest:
+    """Force target_type for match types that have a fixed search space."""
+    if req.filters.target_type is not None:
+        return req
+    if req.match_type in ("supplier_to_founder", "stakeholder_to_project"):
+        req = req.model_copy(deep=True)
+        req.filters.target_type = "project"
+    return req
+
+
 @router.post("/find", response_model=FindMatchesResponse)
 async def find_matches(req: FindMatchesRequest) -> FindMatchesResponse:
+    req = _resolve_target_type(req)
     query_vec = np.array(req.query_vector, dtype=np.float32)
     candidates = await _vector_search(req, query_vec)
     ranked = _rerank(req, query_vec, candidates)

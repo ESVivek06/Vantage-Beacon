@@ -39,7 +39,7 @@ class MatchFilter(BaseModel):
 class FindMatchesRequest(BaseModel):
     source_id: str
     query_vector: list[float]
-    match_type: Literal["freelancer_to_project", "founder_to_investor", "user_to_user"]
+    match_type: Literal["freelancer_to_project", "founder_to_investor", "user_to_user", "supplier_to_founder", "stakeholder_to_project"]
     filters: MatchFilter = Field(default_factory=MatchFilter)
     limit: int = Field(default=20, ge=1, le=100)
     top_k_candidates: int = Field(default=100, ge=10, le=500)
