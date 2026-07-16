@@ -63,6 +63,7 @@ async def _search_profiles(
         params.append(region)
 
     async with acquire() as conn:
+        await conn.execute("SET LOCAL ivfflat.probes = 10")
         rows = await conn.fetch(
             f"""
             SELECT
@@ -100,6 +101,7 @@ async def _search_projects(
         params.append(region)
 
     async with acquire() as conn:
+        await conn.execute("SET LOCAL ivfflat.probes = 10")
         rows = await conn.fetch(
             f"""
             SELECT
