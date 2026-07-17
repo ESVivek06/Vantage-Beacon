@@ -120,6 +120,29 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-2
 
+      - name: Run DB migrations (UK)
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER_UK }} \
+            --task-definition vb-production-uk-api \
+            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_UK_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_UK_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --region eu-west-2 \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER_UK }} \
+            --tasks "$TASK_ARN" \
+            --region eu-west-2
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER_UK }} \
+            --tasks "$TASK_ARN" \
+            --region eu-west-2 \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          echo "Migration exit code: $EXIT_CODE"
+          [ "$EXIT_CODE" = "0" ] || { echo "Migration failed"; exit 1; }
+
       - name: Deploy all UK services
         run: |
           for svc in api web ml; do
@@ -135,16 +158,6 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER_UK }} \
             --services vb-production-uk-api vb-production-uk-web vb-production-uk-ml \
-            --region eu-west-2
-
-      - name: Run DB migrations (UK)
-        run: |
-          aws ecs run-task \
-            --cluster ${{ env.ECS_CLUSTER_UK }} \
-            --task-definition vb-production-uk-api \
-            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_UK_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_UK_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
             --region eu-west-2
 
   deploy-na:
@@ -163,6 +176,29 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Run DB migrations (NA)
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER_NA }} \
+            --task-definition vb-production-na-api \
+            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_NA_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_NA_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
+            --region us-east-1 \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER_NA }} \
+            --tasks "$TASK_ARN" \
+            --region us-east-1
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER_NA }} \
+            --tasks "$TASK_ARN" \
+            --region us-east-1 \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          echo "Migration exit code: $EXIT_CODE"
+          [ "$EXIT_CODE" = "0" ] || { echo "Migration failed"; exit 1; }
+
       - name: Deploy all NA services
         run: |
           for svc in api web ml; do
@@ -178,16 +214,6 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER_NA }} \
             --services vb-production-na-api vb-production-na-web vb-production-na-ml \
-            --region us-east-1
-
-      - name: Run DB migrations (NA)
-        run: |
-          aws ecs run-task \
-            --cluster ${{ env.ECS_CLUSTER_NA }} \
-            --task-definition vb-production-na-api \
-            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_NA_PRIVATE_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_NA_ECS_SG_ID }}],assignPublicIp=DISABLED}" \
             --region us-east-1
 
       - name: Invalidate CloudFront cache

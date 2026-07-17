@@ -105,6 +105,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Run DB migrations
+        run: |
+          SUBNET="${{ secrets.STAGING_PRIVATE_SUBNET_ID }}"
+          SG="${{ secrets.STAGING_ECS_SG_ID }}"
+          SUBNET="${SUBNET:-subnet-04e3a0f15eb306f8c}"
+          SG="${SG:-sg-052c8f30dae075822}"
+          ASSIGN_IP="DISABLED"
+          [ "$SUBNET" = "subnet-04e3a0f15eb306f8c" ] && ASSIGN_IP="ENABLED"
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition vb-staging-uk-api \
+            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNET}],securityGroups=[${SG}],assignPublicIp=${ASSIGN_IP}}" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --region ${{ env.AWS_REGION }}
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          echo "Migration exit code: $EXIT_CODE"
+          [ "$EXIT_CODE" = "0" ] || { echo "Migration failed"; exit 1; }
+
       - name: Deploy API service
         run: |
           aws ecs update-service \
@@ -137,23 +166,4 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services vb-staging-uk-api vb-staging-uk-web vb-staging-uk-ml \
-            --region ${{ env.AWS_REGION }}
-
-      - name: Run DB migrations
-        continue-on-error: true
-        run: |
-          SUBNET="${{ secrets.STAGING_PRIVATE_SUBNET_ID }}"
-          SG="${{ secrets.STAGING_ECS_SG_ID }}"
-          # Fall back to default public subnet/SG if staging-specific secrets not yet set
-          SUBNET="${SUBNET:-subnet-04e3a0f15eb306f8c}"
-          SG="${SG:-sg-052c8f30dae075822}"
-          ASSIGN_IP="DISABLED"
-          # Public subnets require ENABLED; detect by absence of 'private' in subnet name
-          [ "$SUBNET" = "subnet-04e3a0f15eb306f8c" ] && ASSIGN_IP="ENABLED"
-          aws ecs run-task \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --task-definition vb-staging-uk-api \
-            --overrides '{"containerOverrides":[{"name":"api","command":["yarn","prisma","migrate","deploy"]}]}' \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[${SUBNET}],securityGroups=[${SG}],assignPublicIp=${ASSIGN_IP}}" \
             --region ${{ env.AWS_REGION }}
