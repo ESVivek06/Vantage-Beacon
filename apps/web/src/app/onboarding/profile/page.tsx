@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Camera, X } from 'lucide-react';
 import Link from 'next/link';
@@ -57,7 +57,14 @@ export default function OnboardingProfilePage() {
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const role = 'freelancer' as Role;
+  const [role, setRole] = useState<Role>('freelancer');
+
+  useEffect(() => {
+    fetch('/api/user/me')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.role) setRole(data.role as Role); })
+      .catch(() => {});
+  }, []);
 
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');

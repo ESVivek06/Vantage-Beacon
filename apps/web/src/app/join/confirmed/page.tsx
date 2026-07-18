@@ -86,7 +86,7 @@ export default function ConfirmedPage() {
       </div>
 
       <Button size="lg" className="mt-6 w-full" asChild>
-        <Link href="/onboarding/role">Explore V.B →</Link>
+        <Link href="/onboarding">Explore V.B →</Link>
       </Button>
     </div>
   );

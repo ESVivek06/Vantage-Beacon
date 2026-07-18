@@ -311,12 +311,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* AnalyticsBar — sticky below GlobalNav (top: 60px) */}
-      <AnalyticsBar
-        role={isFounder ? 'founder' : 'freelancer'}
-        metrics={analyticsMetrics}
-        loading={analyticsLoading}
-      />
+      {/* AnalyticsBar — sticky below GlobalNav */}
+      <div className="sticky top-14 md:top-16 z-30 bg-neutral-50 px-4 sm:px-6 lg:px-8 py-3 border-b border-neutral-200">
+        <AnalyticsBar
+          role={isFounder ? 'founder' : 'freelancer'}
+          metrics={analyticsMetrics}
+          loading={analyticsLoading}
+        />
+      </div>
 
       {/* Role-specific dashboard body */}
       {isFounder ? (
