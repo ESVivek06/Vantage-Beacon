@@ -13,13 +13,29 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const db = getClient();
-  const profile = await db.profile.findUnique({
-    where: { userId: session.user.id },
-    select: { tags: true },
-  });
+  const [profile, user] = await Promise.all([
+    db.profile.findUnique({
+      where: { userId: session.user.id },
+      select: { tags: true, bio: true, skills: true },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, image: true },
+    }),
+  ]);
 
   const tags: string[] = profile?.tags ?? [];
-  return NextResponse.json({ available: tags.includes('open') });
+
+  const fields = [
+    !!user?.name,
+    !!user?.image,
+    !!(profile?.bio),
+    Array.isArray(profile?.skills) && (profile.skills as unknown[]).length > 0,
+    tags.length > 0,
+  ];
+  const profileCompletion = Math.round((fields.filter(Boolean).length / fields.length) * 100);
+
+  return NextResponse.json({ available: tags.includes('open'), profileCompletion });
 }
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {

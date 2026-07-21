@@ -282,6 +282,30 @@ function FounderDashboard({ userName }: { userName: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+interface SparklineApiResponse {
+  role: string;
+  data: { date: string; value: number }[];
+  insufficientSample: boolean;
+  totals: { matches: number; connections: number; messages: number };
+  deltas: { matches: number; connections: number; messages: number };
+}
+
+function buildMetrics(role: string, s: SparklineApiResponse): Metric[] {
+  const sparkline = s.data.map((p) => p.value);
+  if (role === 'founder') {
+    return [
+      { label: 'Matches Found', value: s.totals.matches, delta: s.deltas.matches, sparkline, aiPowered: true, fallback: false },
+      { label: 'Connections', value: s.totals.connections, delta: s.deltas.connections, sparkline, fallback: false },
+      { label: 'Messages', value: s.totals.messages, delta: s.deltas.messages, sparkline, fallback: false },
+    ];
+  }
+  return [
+    { label: 'Matches Made', value: s.totals.matches, delta: s.deltas.matches, sparkline, aiPowered: true, fallback: false },
+    { label: 'Connections', value: s.totals.connections, delta: s.deltas.connections, sparkline, fallback: false },
+    { label: 'Messages', value: s.totals.messages, delta: s.deltas.messages, sparkline, fallback: false },
+  ];
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const user = session?.user as { name?: string; role?: string; email?: string } | undefined;
@@ -292,20 +316,25 @@ export default function DashboardPage() {
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsMetrics, setAnalyticsMetrics] = useState<Metric[] | undefined>(undefined);
   const [userAvailable, setUserAvailable] = useState<boolean | undefined>(undefined);
-
-  const profileCompletion = 50;
+  const [profileCompletion, setProfileCompletion] = useState(0);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setAnalyticsLoading(false);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, []);
+    fetch('/api/analytics/sparkline?days=14')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: SparklineApiResponse | null) => {
+        if (data?.totals) setAnalyticsMetrics(buildMetrics(isFounder ? 'founder' : 'freelancer', data));
+      })
+      .catch(() => {})
+      .finally(() => setAnalyticsLoading(false));
+  }, [isFounder]);
 
   useEffect(() => {
     fetch('/api/user/me')
       .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.available !== undefined) setUserAvailable(data.available); })
+      .then((data: { available?: boolean; profileCompletion?: number } | null) => {
+        if (data?.available !== undefined) setUserAvailable(data.available);
+        if (data?.profileCompletion !== undefined) setProfileCompletion(data.profileCompletion);
+      })
       .catch(() => {});
   }, []);
 

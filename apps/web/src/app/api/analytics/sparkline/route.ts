@@ -14,6 +14,8 @@ export interface SparklineResponse {
   days: number;
   data: SparklinePoint[];
   insufficientSample: boolean;
+  totals: { matches: number; connections: number; messages: number };
+  deltas: { matches: number; connections: number; messages: number };
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -90,11 +92,57 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const totalEvents = data.reduce((sum, p) => sum + p.value, 0);
     const insufficientSample = totalEvents < 3;
 
+    // Compute deltas: current half of window vs prior half (positive = growth)
+    const half = Math.floor(data.length / 2);
+    const pctDelta = (val: number, base: number) =>
+      base === 0 ? (val > 0 ? 100 : 0) : Math.round(((val - base) / base) * 100);
+
+    // Separate per-source sparklines for computing individual deltas
+    const matchBuckets = new Map<string, number>(Array.from(buckets.keys()).map(k => [k, 0]));
+    const connBuckets = new Map<string, number>(Array.from(buckets.keys()).map(k => [k, 0]));
+    const msgBuckets = new Map<string, number>(Array.from(buckets.keys()).map(k => [k, 0]));
+
+    matches.forEach((m: { matchedAt: Date }) => {
+      const k = m.matchedAt.toISOString().slice(0, 10);
+      if (matchBuckets.has(k)) matchBuckets.set(k, (matchBuckets.get(k) ?? 0) + 1);
+    });
+    connections.forEach((c: { createdAt: Date }) => {
+      const k = c.createdAt.toISOString().slice(0, 10);
+      if (connBuckets.has(k)) connBuckets.set(k, (connBuckets.get(k) ?? 0) + 1);
+    });
+    messages.forEach((m: { sentAt: Date }) => {
+      const k = m.sentAt.toISOString().slice(0, 10);
+      if (msgBuckets.has(k)) msgBuckets.set(k, (msgBuckets.get(k) ?? 0) + 1);
+    });
+
+    const matchVals = Array.from(matchBuckets.values());
+    const connVals = Array.from(connBuckets.values());
+    const msgVals = Array.from(msgBuckets.values());
+
+    const matchTotal = matchVals.reduce((s, v) => s + v, 0);
+    const connTotal = connVals.reduce((s, v) => s + v, 0);
+    const msgTotal = msgVals.reduce((s, v) => s + v, 0);
+
     return NextResponse.json({
       role,
       days,
       data,
       insufficientSample,
+      totals: { matches: matchTotal, connections: connTotal, messages: msgTotal },
+      deltas: {
+        matches: pctDelta(
+          matchVals.slice(half).reduce((s, v) => s + v, 0),
+          matchVals.slice(0, half).reduce((s, v) => s + v, 0),
+        ),
+        connections: pctDelta(
+          connVals.slice(half).reduce((s, v) => s + v, 0),
+          connVals.slice(0, half).reduce((s, v) => s + v, 0),
+        ),
+        messages: pctDelta(
+          msgVals.slice(half).reduce((s, v) => s + v, 0),
+          msgVals.slice(0, half).reduce((s, v) => s + v, 0),
+        ),
+      },
     } satisfies SparklineResponse);
   } catch (err) {
     console.error('[GET /api/analytics/sparkline]', err);
