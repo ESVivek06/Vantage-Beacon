@@ -38,6 +38,7 @@ variable "ses_from_address"    { type = string; default = "noreply@staging.vb.co
 variable "app_url"             { type = string; default = "https://app.staging.vb.com" }
 variable "ml_service_url"      { type = string; default = "" }
 variable "acm_cert_arn"        { type = string; default = "" }
+variable "route53_zone_id"    { type = string; default = "" ; description = "Route53 hosted zone ID for staging.vb.com (or vb.com if staging is a subdomain)" }
 
 locals {
   project = "vb"
@@ -303,6 +304,36 @@ module "ecs" {
     }
   }
   depends_on = [module.rds, module.s3]
+}
+
+# ── Route53 DNS records ───────────────────────────────────────────────────────
+# Creates api.staging.vb.com and app.staging.vb.com pointing at the ECS ALB.
+# Set route53_zone_id to the hosted zone for staging.vb.com (or vb.com).
+# If acm_cert_arn is also set, HTTPS will be fully operational end-to-end.
+resource "aws_route53_record" "api" {
+  count   = var.route53_zone_id != "" ? 1 : 0
+  zone_id = var.route53_zone_id
+  name    = "api.staging.vb.com"
+  type    = "A"
+
+  alias {
+    name                   = module.ecs.alb_dns_name
+    zone_id                = module.ecs.alb_zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "app" {
+  count   = var.route53_zone_id != "" ? 1 : 0
+  zone_id = var.route53_zone_id
+  name    = "app.staging.vb.com"
+  type    = "A"
+
+  alias {
+    name                   = module.ecs.alb_dns_name
+    zone_id                = module.ecs.alb_zone_id
+    evaluate_target_health = true
+  }
 }
 
 output "alb_dns"        { value = module.ecs.alb_dns_name }
