@@ -24,6 +24,18 @@ const FOUNDER_DEFAULTS: Metric[] = [
   { label: 'Conversion', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
 ];
 
+const INVESTOR_DEFAULTS: Metric[] = [
+  { label: 'Deal Flow', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
+  { label: 'Interests Sent', value: '—', delta: 0, sparkline: [], fallback: true },
+  { label: 'Meetings Booked', value: '—', delta: 0, sparkline: [], fallback: true },
+];
+
+const STAKEHOLDER_DEFAULTS: Metric[] = [
+  { label: 'Introductions', value: '—', delta: 0, sparkline: [], fallback: true },
+  { label: 'Connections', value: '—', delta: 0, sparkline: [], fallback: true },
+  { label: 'Collaborations', value: '—', delta: 0, sparkline: [], fallback: true },
+];
+
 function Sparkline({ data }: { data: number[] }) {
   if (!data || data.length < 2) {
     return <div className="h-8 w-full bg-neutral-100 rounded animate-pulse" aria-hidden="true" />;
@@ -83,13 +95,31 @@ function DeltaBadge({ delta }: { delta?: number }) {
 }
 
 export interface AnalyticsBarProps {
-  role: 'freelancer' | 'founder';
+  role: 'freelancer' | 'founder' | 'investor' | 'stakeholder';
   metrics?: Metric[];
   loading?: boolean;
 }
 
+function getDefaults(role: AnalyticsBarProps['role']): Metric[] {
+  if (role === 'investor') return INVESTOR_DEFAULTS;
+  if (role === 'stakeholder') return STAKEHOLDER_DEFAULTS;
+  if (role === 'founder') return FOUNDER_DEFAULTS;
+  return FREELANCER_DEFAULTS;
+}
+
+function getRoleLabel(role: AnalyticsBarProps['role']): string {
+  const labels: Record<AnalyticsBarProps['role'], string> = {
+    freelancer: 'Freelancer',
+    founder: 'Founder',
+    investor: 'Investor',
+    stakeholder: 'Stakeholder',
+  };
+  return labels[role];
+}
+
 export function AnalyticsBar({ role, metrics, loading = false }: AnalyticsBarProps) {
-  const defaults = role === 'freelancer' ? FREELANCER_DEFAULTS : FOUNDER_DEFAULTS;
+  const defaults = getDefaults(role);
+  const _roleLabel = getRoleLabel(role);
   const items = metrics ?? defaults;
 
   if (loading) {
@@ -109,7 +139,7 @@ export function AnalyticsBar({ role, metrics, loading = false }: AnalyticsBarPro
   return (
     <div
       role="region"
-      aria-label={`${role === 'freelancer' ? 'Freelancer' : 'Founder'} analytics`}
+      aria-label={`${getRoleLabel(role)} analytics`}
       className="grid grid-cols-1 sm:grid-cols-3 gap-3"
     >
       {items.map((metric, i) => (

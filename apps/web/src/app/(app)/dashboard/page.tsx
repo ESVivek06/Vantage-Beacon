@@ -12,6 +12,12 @@ import { cn } from '@/lib/utils';
 import { AnalyticsBar } from '@/components/dashboard/AnalyticsBar';
 import type { Metric } from '@/components/dashboard/AnalyticsBar';
 
+// Investor components
+import { InvestorDashboard } from '@/components/dashboard/investor/InvestorDashboard';
+
+// Stakeholder components
+import { StakeholderDashboard } from '@/components/dashboard/stakeholder/StakeholderDashboard';
+
 // Freelancer components
 import { MatchCard } from '@/components/MatchCard';
 import type { MatchCardProps } from '@/components/MatchCard';
@@ -299,6 +305,20 @@ function buildMetrics(role: string, s: SparklineApiResponse): Metric[] {
       { label: 'Messages', value: s.totals.messages, delta: s.deltas.messages, sparkline, fallback: false },
     ];
   }
+  if (role === 'investor') {
+    return [
+      { label: 'Deal Flow', value: s.totals.matches, delta: s.deltas.matches, sparkline, aiPowered: true, fallback: false },
+      { label: 'Interests Sent', value: s.totals.connections, delta: s.deltas.connections, sparkline, fallback: false },
+      { label: 'Meetings Booked', value: s.totals.messages, delta: s.deltas.messages, sparkline, fallback: false },
+    ];
+  }
+  if (role === 'stakeholder') {
+    return [
+      { label: 'Introductions', value: s.totals.matches, delta: s.deltas.matches, sparkline, fallback: false },
+      { label: 'Connections', value: s.totals.connections, delta: s.deltas.connections, sparkline, fallback: false },
+      { label: 'Collaborations', value: s.totals.messages, delta: s.deltas.messages, sparkline, fallback: false },
+    ];
+  }
   return [
     { label: 'Matches Made', value: s.totals.matches, delta: s.deltas.matches, sparkline, aiPowered: true, fallback: false },
     { label: 'Connections', value: s.totals.connections, delta: s.deltas.connections, sparkline, fallback: false },
@@ -312,6 +332,8 @@ export default function DashboardPage() {
   const userName = user?.name ?? user?.email ?? 'there';
   const userRole = (user?.role as string) ?? 'freelancer';
   const isFounder = userRole === 'founder';
+  const isInvestor = userRole === 'investor';
+  const isStakeholder = userRole === 'stakeholder';
 
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsMetrics, setAnalyticsMetrics] = useState<Metric[] | undefined>(undefined);
@@ -322,11 +344,11 @@ export default function DashboardPage() {
     fetch('/api/analytics/sparkline?days=14')
       .then((r) => r.ok ? r.json() : null)
       .then((data: SparklineApiResponse | null) => {
-        if (data?.totals) setAnalyticsMetrics(buildMetrics(isFounder ? 'founder' : 'freelancer', data));
+        if (data?.totals) setAnalyticsMetrics(buildMetrics(userRole, data));
       })
       .catch(() => {})
       .finally(() => setAnalyticsLoading(false));
-  }, [isFounder]);
+  }, [userRole]);
 
   useEffect(() => {
     fetch('/api/user/me')
@@ -342,15 +364,16 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-neutral-50">
       {/* AnalyticsBar — sticky below GlobalNav (top: 60px) */}
       <AnalyticsBar
-        role={isFounder ? 'founder' : 'freelancer'}
+        role={isFounder ? 'founder' : isInvestor ? 'investor' : isStakeholder ? 'stakeholder' : 'freelancer'}
         metrics={analyticsMetrics}
         loading={analyticsLoading}
       />
 
       {/* Role-specific dashboard body */}
-      {isFounder ? (
-        <FounderDashboard userName={userName} />
-      ) : (
+      {isFounder && <FounderDashboard userName={userName} />}
+      {isInvestor && <InvestorDashboard userName={userName} />}
+      {isStakeholder && <StakeholderDashboard userName={userName} />}
+      {!isFounder && !isInvestor && !isStakeholder && (
         <FreelancerDashboard
           userName={userName}
           profileCompletion={profileCompletion}
