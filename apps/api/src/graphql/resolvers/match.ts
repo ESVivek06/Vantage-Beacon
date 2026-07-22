@@ -126,6 +126,11 @@ export const matchResolvers = {
       });
     },
 
+    myMatchCount: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      const user = requireAuth(ctx);
+      return ctx.db!.match.count({ where: { sourceId: user.sub, deletedAt: null } });
+    },
+
     matchMetrics: async (
       _: unknown,
       { since }: { since?: Date },

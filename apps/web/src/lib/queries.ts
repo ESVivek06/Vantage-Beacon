@@ -184,6 +184,14 @@ export const UNREAD_COUNT_QUERY = gql`
   }
 `;
 
+export const DASHBOARD_METRICS_QUERY = gql`
+  query DashboardMetrics {
+    myMatchCount
+    unreadCount
+    myConnectionCount
+  }
+`;
+
 // Mutations
 export const UPDATE_PROFILE_MUTATION = gql`
   mutation UpdateProfile($input: UpdateProfileInput!) {

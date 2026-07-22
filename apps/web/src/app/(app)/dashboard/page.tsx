@@ -7,6 +7,8 @@ import { ChevronRight, LayoutDashboard, Users, Inbox, TrendingUp, Banknote } fro
 import { EscrowDashboardTab } from '@/components/escrow/EscrowDashboardTab';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/graphql';
+import { DASHBOARD_METRICS_QUERY } from '@/lib/queries';
 
 // Shared
 import { AnalyticsBar } from '@/components/dashboard/AnalyticsBar';
@@ -42,7 +44,7 @@ import type { ActivityItem } from '@/components/dashboard/founder/ActivityFeed';
 const FREELANCER_METRICS: Metric[] = [
   { label: 'Matches Made', value: '—', delta: 0, sparkline: [], aiPowered: true, fallback: true },
   { label: 'Profile Views', value: '—', delta: 0, sparkline: [], fallback: true },
-  { label: 'Messages Sent', value: '—', delta: 0, sparkline: [], fallback: true },
+  { label: 'Unread Messages', value: '—', delta: 0, sparkline: [], fallback: true },
 ];
 
 const MATCH_TABS = [
@@ -341,13 +343,27 @@ export default function DashboardPage() {
   const [profileCompletion, setProfileCompletion] = useState(0);
 
   useEffect(() => {
-    fetch('/api/analytics/sparkline?days=14')
-      .then((r) => r.ok ? r.json() : null)
-      .then((data: SparklineApiResponse | null) => {
+    let cancelled = false;
+
+    async function fetchMetrics() {
+      try {
+        const r = await fetch('/api/analytics/sparkline?days=14');
+        const data: SparklineApiResponse | null = r.ok ? await r.json() : null;
+        if (cancelled) return;
         if (data?.totals) setAnalyticsMetrics(buildMetrics(userRole, data));
-      })
-      .catch(() => {})
-      .finally(() => setAnalyticsLoading(false));
+        setAnalyticsLoading(false);
+      } catch {
+        if (cancelled) return;
+        setAnalyticsLoading(false);
+      }
+    }
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [userRole]);
 
   useEffect(() => {

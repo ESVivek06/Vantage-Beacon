@@ -5,6 +5,18 @@ import type { ConnectionKind, ConnectionStatus } from '@vb/database';
 
 export const connectionResolvers = {
   Query: {
+    myConnectionCount: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      requireAuth(ctx);
+      const userId = ctx.user!.sub;
+      return ctx.db!.connection.count({
+        where: {
+          status: 'accepted',
+          deletedAt: null,
+          OR: [{ requesterId: userId }, { receiverId: userId }],
+        },
+      });
+    },
+
     connections: async (
       _: unknown,
       { status }: { status?: ConnectionStatus },

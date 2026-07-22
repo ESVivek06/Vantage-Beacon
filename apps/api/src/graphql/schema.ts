@@ -310,6 +310,8 @@ export const typeDefs = /* GraphQL */ `
     matchCandidates(userId: ID!, role: UserRole!, limit: Int): [MatchResult!]!
     matchDisplay(userId: ID!, role: UserRole!, limit: Int, requiredSkills: [String!]): [MatchDisplayResult!]!
     matchMetrics(since: DateTime): MatchMetrics!
+    myMatchCount: Int!
+    myConnectionCount: Int!
   }
 
   type Mutation {
